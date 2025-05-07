@@ -8,7 +8,7 @@ import PendingApprovalsTable from "@/components/PendingApprovalsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { statsMap } from "@/lib/mock-data";
-import { Buildings, UserCheck, CheckCircle, AlertCircle, Download, BarChart3 } from "lucide-react";
+import { Building, UserCheck, CheckCircle, AlertCircle, Download, BarChart3 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 const COLORS = ["#0284c7", "#0ea5e9", "#38bdf8", "#7dd3fc"];
@@ -52,7 +52,7 @@ const DistrictDashboard = () => {
           <StatsCard
             title="Hospitals"
             value="8"
-            icon={<Buildings className="h-4 w-4" />}
+            icon={<Building className="h-4 w-4" />}
             description="In your district"
           />
           <StatsCard
