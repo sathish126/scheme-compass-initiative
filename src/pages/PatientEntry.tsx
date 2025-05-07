@@ -34,14 +34,17 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { schemes } from "@/lib/mock-data";
+import { Save, X } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   age: z.coerce.number().min(0, { message: "Age must be a positive number." }),
   gender: z.enum(["male", "female", "other"], { required_error: "Gender is required." }),
-  address: z.string().min(5, { message: "Address must be at least 5 characters." }),
   contact: z.string().min(5, { message: "Contact must be at least 5 characters." }),
+  address: z.string().min(5, { message: "Address must be at least 5 characters." }),
   medicalHistory: z.string(),
+  disease: z.string().min(1, { message: "Disease/Condition is required." }),
+  additionalNotes: z.string().optional(),
   income: z.coerce.number().min(0, { message: "Income must be a positive number." }),
   category: z.enum(["general", "obc", "sc", "st"], { required_error: "Category is required." }),
   insuranceStatus: z.boolean().default(false),
@@ -57,6 +60,8 @@ const PatientEntry = () => {
       address: "",
       contact: "",
       medicalHistory: "",
+      disease: "",
+      additionalNotes: "",
       income: 0,
       category: "general",
       insuranceStatus: false,
@@ -68,7 +73,7 @@ const PatientEntry = () => {
   // Find eligible schemes whenever form values change
   React.useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
-      if (value.age && value.income && value.gender && value.category) {
+      if (value.age && value.income && value.gender && value.category && value.disease) {
         const eligible = schemes.filter(scheme => {
           const { eligibilityCriteria } = scheme;
           
@@ -134,7 +139,7 @@ const PatientEntry = () => {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel>Full Name*</FormLabel>
                           <FormControl>
                             <Input placeholder="John Doe" {...field} />
                           </FormControl>
@@ -147,7 +152,7 @@ const PatientEntry = () => {
                       name="age"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Age</FormLabel>
+                          <FormLabel>Age*</FormLabel>
                           <FormControl>
                             <Input type="number" {...field} />
                           </FormControl>
@@ -163,7 +168,7 @@ const PatientEntry = () => {
                       name="gender"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Gender</FormLabel>
+                          <FormLabel>Gender*</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             defaultValue={field.value}
@@ -188,7 +193,7 @@ const PatientEntry = () => {
                       name="contact"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Number</FormLabel>
+                          <FormLabel>Contact Number*</FormLabel>
                           <FormControl>
                             <Input placeholder="555-123-4567" {...field} />
                           </FormControl>
@@ -217,6 +222,37 @@ const PatientEntry = () => {
 
                   <FormField
                     control={form.control}
+                    name="disease"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Disease/Condition*</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select disease/condition" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="diabetes">Diabetes</SelectItem>
+                            <SelectItem value="hypertension">Hypertension</SelectItem>
+                            <SelectItem value="tuberculosis">Tuberculosis</SelectItem>
+                            <SelectItem value="malaria">Malaria</SelectItem>
+                            <SelectItem value="dengue">Dengue</SelectItem>
+                            <SelectItem value="covid19">COVID-19</SelectItem>
+                            <SelectItem value="cancer">Cancer</SelectItem>
+                            <SelectItem value="heartdisease">Heart Disease</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="medicalHistory"
                     render={({ field }) => (
                       <FormItem>
@@ -224,6 +260,23 @@ const PatientEntry = () => {
                         <FormControl>
                           <Textarea
                             placeholder="Any pre-existing conditions or allergies"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="additionalNotes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Additional Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter any additional information"
                             {...field}
                           />
                         </FormControl>
@@ -296,8 +349,13 @@ const PatientEntry = () => {
                     )}
                   />
                 </CardContent>
-                <CardFooter>
-                  <Button type="submit" className="bg-healthcare-600 hover:bg-healthcare-700">Register Patient</Button>
+                <CardFooter className="flex gap-2">
+                  <Button type="submit" className="bg-healthcare-600 hover:bg-healthcare-700">
+                    <Save className="mr-2 h-4 w-4" /> Register Patient
+                  </Button>
+                  <Button type="reset" variant="outline">
+                    <X className="mr-2 h-4 w-4" /> Cancel
+                  </Button>
                 </CardFooter>
               </form>
             </Form>
