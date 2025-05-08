@@ -20,9 +20,12 @@ const FacilityDashboard = () => {
             <p className="text-muted-foreground">{user?.facility} - Facility Dashboard</p>
           </div>
           <div>
-            <Button className="bg-healthcare-600 hover:bg-healthcare-700">
-              <UsersRound className="mr-2 h-4 w-4" /> Register New Patient
-            </Button>
+            <Button 
+            className="bg-healthcare-600 hover:bg-healthcare-700"
+            onClick={() => navigate("/patient-entry")}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" /> Add New Patient
+          </Button>
           </div>
         </div>
 
