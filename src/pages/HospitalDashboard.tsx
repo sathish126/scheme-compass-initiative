@@ -6,13 +6,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import SchemeRecommendationsChart from "@/components/SchemeRecommendationsChart";
 import PendingApprovalsTable from "@/components/PendingApprovalsTable";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { statsMap } from "@/lib/mock-data";
-import { Building2, Users, CheckCircle, AlertCircle, Download, ArrowRight, ClipboardList, Shield } from "lucide-react";
+import { Building2, Users, CheckCircle, AlertCircle, Download, ArrowRight, ClipboardList, Shield, Table } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const HospitalDashboard = () => {
   const { user } = useAuth();
   const stats = statsMap.hospital;
+  const navigate = useNavigate();
 
   return (
     <DashboardLayout>
@@ -27,7 +29,7 @@ const HospitalDashboard = () => {
               <Download className="mr-2 h-4 w-4" /> Export Report
             </Button>
             <Button className="bg-healthcare-600 hover:bg-healthcare-700">
-              View All Facilities
+              <Table className="mr-2 h-4 w-4" /> All Patient Records
             </Button>
           </div>
         </div>
@@ -97,8 +99,66 @@ const HospitalDashboard = () => {
           />
         </div>
 
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recently Approved Schemes</CardTitle>
+              <CardDescription>Schemes approved and sent to district level</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 border-b last:border-0">
+                    <div>
+                      <p className="font-medium text-sm">Patient {10-i}</p>
+                      <p className="text-xs text-muted-foreground">Health For All Scheme</p>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-xs mr-2 text-muted-foreground">1 day ago</span>
+                      <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button variant="ghost" size="sm" className="w-full mt-4">View All Approvals</Button>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending From Facilities</CardTitle>
+              <CardDescription>New recommendations awaiting your review</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 border-b last:border-0">
+                    <div>
+                      <p className="font-medium text-sm">Patient R-{100+i}</p>
+                      <p className="text-xs text-muted-foreground">From: {["City Clinic", "Rural Health Center", "Primary PHC", "Community Hospital"][i]}</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs h-7"
+                    >
+                      Review
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button variant="ghost" size="sm" className="w-full mt-4" onClick={() => document.getElementById('pending-approvals')?.scrollIntoView({ behavior: 'smooth' })}>
+                View All Pending
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
         <SchemeRecommendationsChart />
-        <PendingApprovalsTable title="Pending Hospital Approvals" userRole="hospital" />
+        
+        <div id="pending-approvals">
+          <PendingApprovalsTable title="Pending Hospital Approvals" userRole="hospital" />
+        </div>
       </div>
     </DashboardLayout>
   );

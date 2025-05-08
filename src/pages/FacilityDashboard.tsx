@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatsCard from "@/components/StatsCard";
@@ -8,10 +8,70 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ClipboardList, CheckCheck, Users, UserCheck, PlusCircle, ArrowRight, Building, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/components/ui/sonner";
+
+// Common diseases and associated schemes
+const diseaseSchemeMap = {
+  "diabetes": ["Health For All", "Chronic Disease Management"],
+  "hypertension": ["Health For All", "Cardiovascular Care Scheme"],
+  "malaria": ["Infectious Disease Control", "Rural Health Initiative"],
+  "tuberculosis": ["TB Elimination Program", "Respiratory Health Scheme"],
+  "dengue": ["Vector-Borne Disease Control", "Emergency Care Initiative"],
+  "covid19": ["COVID Relief Scheme", "Pandemic Response Program"],
+  "cancer": ["Cancer Care Initiative", "Critical Illness Support"],
+  "malnutrition": ["Child Health Initiative", "Nutrition Support Program"],
+  "pregnancy": ["Maternal Welfare Scheme", "Women's Health Initiative"],
+  "mental_health": ["Mental Health Support", "Psychological Wellness Scheme"]
+};
 
 const FacilityDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [patientName, setPatientName] = useState("");
+  const [disease, setDisease] = useState("");
+  const [recommendedSchemes, setRecommendedSchemes] = useState<string[]>([]);
+  const [selectedScheme, setSelectedScheme] = useState("");
+  const [showRecommendations, setShowRecommendations] = useState(false);
+
+  // Generate recommendations based on disease
+  const generateRecommendations = () => {
+    if (!patientName.trim()) {
+      toast.error("Please enter patient name");
+      return;
+    }
+    if (!disease) {
+      toast.error("Please select a disease");
+      return;
+    }
+
+    const schemes = diseaseSchemeMap[disease as keyof typeof diseaseSchemeMap] || ["Health For All"];
+    setRecommendedSchemes(schemes);
+    setSelectedScheme(schemes[0]);
+    setShowRecommendations(true);
+    toast.success("Schemes recommended based on patient condition");
+  };
+
+  // Submit recommendation to hospital
+  const submitRecommendation = () => {
+    if (!selectedScheme) {
+      toast.error("Please select a scheme");
+      return;
+    }
+
+    toast.success(`Recommendation for ${patientName} submitted to hospital for approval`, {
+      description: `Scheme: ${selectedScheme}`,
+    });
+
+    // Reset form
+    setPatientName("");
+    setDisease("");
+    setRecommendedSchemes([]);
+    setSelectedScheme("");
+    setShowRecommendations(false);
+  };
 
   return (
     <DashboardLayout>
@@ -66,6 +126,96 @@ const FacilityDashboard = () => {
                 <p className="text-sm font-medium mt-2">State</p>
                 <p className="text-xs text-muted-foreground">Pending</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Patient Data Entry & Scheme Recommendation */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Patient Scheme Recommendation</CardTitle>
+            <CardDescription>Enter patient details to get scheme recommendations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="patientName">Patient Name</Label>
+                  <Input 
+                    id="patientName" 
+                    placeholder="Enter patient name" 
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="disease">Disease/Condition</Label>
+                  <Select 
+                    value={disease} 
+                    onValueChange={setDisease}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select disease or condition" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="diabetes">Diabetes</SelectItem>
+                      <SelectItem value="hypertension">Hypertension</SelectItem>
+                      <SelectItem value="malaria">Malaria</SelectItem>
+                      <SelectItem value="tuberculosis">Tuberculosis</SelectItem>
+                      <SelectItem value="dengue">Dengue</SelectItem>
+                      <SelectItem value="covid19">COVID-19</SelectItem>
+                      <SelectItem value="cancer">Cancer</SelectItem>
+                      <SelectItem value="malnutrition">Malnutrition</SelectItem>
+                      <SelectItem value="pregnancy">Pregnancy</SelectItem>
+                      <SelectItem value="mental_health">Mental Health</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  onClick={generateRecommendations}
+                  className="bg-healthcare-600 hover:bg-healthcare-700"
+                >
+                  Generate Recommendations
+                </Button>
+              </div>
+              
+              {showRecommendations && (
+                <div className="mt-6 space-y-4 border-t pt-4">
+                  <h3 className="text-lg font-medium">Recommended Schemes</h3>
+                  <p className="text-sm text-muted-foreground">Based on the patient's condition, the following schemes are recommended:</p>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="scheme">Select Scheme to Recommend</Label>
+                    <Select 
+                      value={selectedScheme} 
+                      onValueChange={setSelectedScheme}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select scheme" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {recommendedSchemes.map((scheme) => (
+                          <SelectItem key={scheme} value={scheme}>
+                            {scheme}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      onClick={submitRecommendation}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Submit Recommendation to Hospital
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

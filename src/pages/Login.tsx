@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Login = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { login } = useAuth();
+  const [activeRole, setActiveRole] = useState<string>("facility");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +24,27 @@ const Login = () => {
       console.error("Login error:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const setRoleEmail = (role: string) => {
+    setActiveRole(role);
+    switch (role) {
+      case "facility":
+        setEmail("jane.smith@facility.com");
+        break;
+      case "hospital":
+        setEmail("michael.johnson@hospital.com");
+        break;
+      case "district":
+        setEmail("amanda.lee@district.com");
+        break;
+      case "state":
+        setEmail("robert.chen@state.com");
+        break;
+      case "super":
+        setEmail("sarah.williams@super.com");
+        break;
     }
   };
 
@@ -41,6 +64,25 @@ const Login = () => {
           </CardHeader>
           <form onSubmit={handleLogin}>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Select Your Role</Label>
+                <Tabs 
+                  defaultValue="facility" 
+                  className="w-full" 
+                  value={activeRole}
+                  onValueChange={(value) => setRoleEmail(value)}
+                >
+                  <TabsList className="grid grid-cols-3 mb-2">
+                    <TabsTrigger value="facility">Facility</TabsTrigger>
+                    <TabsTrigger value="hospital">Hospital</TabsTrigger>
+                    <TabsTrigger value="district">District</TabsTrigger>
+                  </TabsList>
+                  <TabsList className="grid grid-cols-2">
+                    <TabsTrigger value="state">State</TabsTrigger>
+                    <TabsTrigger value="super">Super Admin</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -83,6 +125,7 @@ const Login = () => {
         </Card>
         
         <div className="mt-8 text-center text-sm">
+          <p className="mb-2 text-muted-foreground font-medium">Demo Accounts</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-left">
             <div className="p-2 bg-gray-50 rounded-md">
               <p><strong>Facility User:</strong></p>
