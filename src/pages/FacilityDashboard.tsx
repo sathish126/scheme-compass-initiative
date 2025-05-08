@@ -5,7 +5,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import StatsCard from "@/components/StatsCard";
 import PendingApprovalsTable from "@/components/PendingApprovalsTable";
 import { useAuth } from "@/contexts/AuthContext";
-import { UsersRound, ClipboardList, CheckCheck, Users, UserCheck, PlusCircle } from "lucide-react";
+import { ClipboardList, CheckCheck, Users, UserCheck, PlusCircle, ArrowRight, Building, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -30,6 +30,45 @@ const FacilityDashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Approval Workflow Status */}
+        <Card className="bg-muted/50">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6">
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-healthcare-100 flex items-center justify-center border-2 border-healthcare-500">
+                  <ClipboardList className="h-6 w-6 text-healthcare-600" />
+                </div>
+                <p className="text-sm font-medium mt-2">Facility</p>
+                <p className="text-xs text-muted-foreground">Current</p>
+              </div>
+              <ArrowRight className="hidden md:block h-6 w-6 text-muted-foreground" />
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Building className="h-6 w-6 text-gray-400" />
+                </div>
+                <p className="text-sm font-medium mt-2">Hospital</p>
+                <p className="text-xs text-muted-foreground">Next</p>
+              </div>
+              <ArrowRight className="hidden md:block h-6 w-6 text-muted-foreground" />
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-gray-400" />
+                </div>
+                <p className="text-sm font-medium mt-2">District</p>
+                <p className="text-xs text-muted-foreground">Pending</p>
+              </div>
+              <ArrowRight className="hidden md:block h-6 w-6 text-muted-foreground" />
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-gray-400" />
+                </div>
+                <p className="text-sm font-medium mt-2">State</p>
+                <p className="text-xs text-muted-foreground">Pending</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard

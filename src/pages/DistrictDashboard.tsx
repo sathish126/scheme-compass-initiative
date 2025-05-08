@@ -8,7 +8,10 @@ import PendingApprovalsTable from "@/components/PendingApprovalsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { statsMap } from "@/lib/mock-data";
-import { Building, UserCheck, CheckCircle, AlertCircle, Download, BarChart3 } from "lucide-react";
+import { 
+  Building, UserCheck, CheckCircle, AlertCircle, 
+  Download, BarChart3, ArrowRight, ShieldCheck 
+} from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 const COLORS = ["#0284c7", "#0ea5e9", "#38bdf8", "#7dd3fc"];
@@ -41,6 +44,45 @@ const DistrictDashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Approval Workflow Status */}
+        <Card className="bg-muted/50">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6">
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <Building className="h-6 w-6 text-green-600" />
+                </div>
+                <p className="text-sm font-medium mt-2">Hospital</p>
+                <p className="text-xs text-muted-foreground">Approved</p>
+              </div>
+              <ArrowRight className="hidden md:block h-6 w-6 text-muted-foreground" />
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-healthcare-100 flex items-center justify-center border-2 border-healthcare-500">
+                  <ShieldCheck className="h-6 w-6 text-healthcare-600" />
+                </div>
+                <p className="text-sm font-medium mt-2">District</p>
+                <p className="text-xs text-muted-foreground">Current</p>
+              </div>
+              <ArrowRight className="hidden md:block h-6 w-6 text-muted-foreground" />
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-gray-400" />
+                </div>
+                <p className="text-sm font-medium mt-2">State</p>
+                <p className="text-xs text-muted-foreground">Next</p>
+              </div>
+              <ArrowRight className="hidden md:block h-6 w-6 text-muted-foreground" />
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-gray-400" />
+                </div>
+                <p className="text-sm font-medium mt-2">Super Admin</p>
+                <p className="text-xs text-muted-foreground">Final</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
@@ -156,6 +198,7 @@ const DistrictDashboard = () => {
         </div>
 
         <SchemeRecommendationsChart />
+        
         <PendingApprovalsTable title="Pending District Approvals" userRole="district" />
       </div>
     </DashboardLayout>
