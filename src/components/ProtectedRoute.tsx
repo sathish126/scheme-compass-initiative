@@ -3,6 +3,8 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@/types";
+import MobileAppLayout from "./MobileAppLayout";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,9 +16,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles = [] 
 }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
+  const isMobile = useIsMobile();
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-healthcare-600"></div>
+        <p className="ml-3 text-healthcare-800">Loading...</p>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -39,6 +47,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       default:
         return <Navigate to="/" replace />;
     }
+  }
+
+  // Use mobile layout for mobile devices
+  if (isMobile) {
+    return <MobileAppLayout>{children}</MobileAppLayout>;
   }
 
   return <>{children}</>;

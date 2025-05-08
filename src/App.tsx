@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 import Login from "./pages/Login";
+import Index from "./pages/Index";
 import FacilityDashboard from "./pages/FacilityDashboard";
 import HospitalDashboard from "./pages/HospitalDashboard";
 import DistrictDashboard from "./pages/DistrictDashboard";
@@ -16,6 +17,9 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import PatientEntry from "./pages/PatientEntry";
 import PatientList from "./pages/PatientList";
 import NotFound from "./pages/NotFound";
+import DistrictStats from "./pages/DistrictStats";
+import StateStats from "./pages/StateStats";
+import SystemSettings from "./pages/SystemSettings";
 
 const queryClient = new QueryClient();
 
@@ -27,7 +31,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             
             {/* Role-specific dashboards */}
@@ -56,6 +60,14 @@ const App = () => (
               } 
             />
             <Route 
+              path="/district-stats" 
+              element={
+                <ProtectedRoute allowedRoles={["district"]}>
+                  <DistrictStats />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/state-dashboard" 
               element={
                 <ProtectedRoute allowedRoles={["state"]}>
@@ -64,10 +76,26 @@ const App = () => (
               } 
             />
             <Route 
+              path="/state-stats" 
+              element={
+                <ProtectedRoute allowedRoles={["state"]}>
+                  <StateStats />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/super-admin-dashboard" 
               element={
                 <ProtectedRoute allowedRoles={["super"]}>
                   <SuperAdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/system-settings" 
+              element={
+                <ProtectedRoute allowedRoles={["super"]}>
+                  <SystemSettings />
                 </ProtectedRoute>
               } 
             />
