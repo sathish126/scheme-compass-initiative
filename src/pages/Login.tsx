@@ -83,7 +83,6 @@ const Login = () => {
         </Card>
         
         <div className="mt-8 text-center text-sm">
-          <p className="text-muted-foreground">Demo Accounts:</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-left">
             <div className="p-2 bg-gray-50 rounded-md">
               <p><strong>Facility User:</strong></p>
