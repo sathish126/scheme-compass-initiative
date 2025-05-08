@@ -1,15 +1,17 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatsCard from "@/components/StatsCard";
 import PendingApprovalsTable from "@/components/PendingApprovalsTable";
 import { useAuth } from "@/contexts/AuthContext";
-import { UsersRound, ClipboardList, CheckCheck, Users, UserCheck } from "lucide-react";
+import { UsersRound, ClipboardList, CheckCheck, Users, UserCheck, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const FacilityDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <DashboardLayout>
@@ -21,11 +23,11 @@ const FacilityDashboard = () => {
           </div>
           <div>
             <Button 
-            className="bg-healthcare-600 hover:bg-healthcare-700"
-            onClick={() => navigate("/patient-entry")}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Patient
-          </Button>
+              className="bg-healthcare-600 hover:bg-healthcare-700"
+              onClick={() => navigate("/patient-entry")}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" /> Add New Patient
+            </Button>
           </div>
         </div>
 
