@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check, X, AlertCircle, Info } from "lucide-react";
+import { Check, X, AlertCircle, Info, Download } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import {
   Dialog,
@@ -80,18 +79,48 @@ const sampleApprovals: Approval[] = [
     disease: "Dengue",
     history: "First episode, recovering."
   },
+  { 
+    id: "6", 
+    patientName: "Sarah Wilson", 
+    schemeName: "Mental Health Support", 
+    date: "2023-05-06", 
+    status: "pending", 
+    facilityName: "City Hospital",
+    disease: "Anxiety",
+    history: "Recently diagnosed with generalized anxiety disorder."
+  },
+  { 
+    id: "7", 
+    patientName: "Michael Brown", 
+    schemeName: "Senior Care Plus", 
+    date: "2023-05-07", 
+    status: "pending", 
+    facilityName: "Elder Care Center",
+    disease: "Arthritis",
+    history: "Chronic joint pain for over a decade."
+  },
 ];
 
 interface PendingApprovalsTableProps {
   title?: string;
   userRole?: string;
+  // Additional props to handle global approval state
+  externalApprovals?: Approval[];
+  onApprove?: (approval: Approval) => void;
+  onReject?: (approval: Approval, reason: string) => void;
 }
 
 const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({ 
   title = "Pending Approvals", 
-  userRole = "hospital" 
+  userRole = "hospital",
+  externalApprovals,
+  onApprove,
+  onReject
 }) => {
-  const [pendingApprovals, setPendingApprovals] = useState<Approval[]>(sampleApprovals);
+  // Use external approvals if provided, otherwise use sample data
+  const [pendingApprovals, setPendingApprovals] = useState<Approval[]>(
+    externalApprovals || sampleApprovals
+  );
   const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState<boolean>(false);
@@ -117,13 +146,17 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
   const handleApprove = (approval: Approval) => {
     const nextLevel = getNextLevel(userRole);
     
-    // In a real app, this would make an API call
+    // If we have external approval handler, use that
+    if (onApprove) {
+      onApprove(approval);
+    } else {
+      // Otherwise handle locally
+      setPendingApprovals(pendingApprovals.filter(item => item.id !== approval.id));
+    }
+    
     toast.success(`Scheme recommendation for ${approval.patientName} approved successfully`, {
       description: `The recommendation has been sent to ${nextLevel === "approved" ? "the patient" : `${nextLevel} admin`} for ${nextLevel === "approved" ? "implementation" : "further review"}.`
     });
-    
-    // Remove from the current list
-    setPendingApprovals(pendingApprovals.filter(item => item.id !== approval.id));
   };
 
   // Handle rejection dialog
@@ -136,13 +169,17 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
   const handleReject = () => {
     if (!selectedApproval) return;
     
-    // In a real app, this would make an API call
+    // If we have external rejection handler, use that
+    if (onReject) {
+      onReject(selectedApproval, rejectionReason);
+    } else {
+      // Otherwise handle locally
+      setPendingApprovals(pendingApprovals.filter(item => item.id !== selectedApproval.id));
+    }
+    
     toast.error(`Scheme recommendation for ${selectedApproval.patientName} rejected`, {
       description: rejectionReason || "The recommendation has been rejected."
     });
-    
-    // Remove from the current list
-    setPendingApprovals(pendingApprovals.filter(item => item.id !== selectedApproval.id));
     
     // Close dialog and reset state
     setIsRejectDialogOpen(false);
@@ -156,11 +193,57 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
     setIsDetailsOpen(true);
   };
 
+  // Export data as CSV
+  const exportData = () => {
+    // Create CSV content
+    let csvContent = "ID,Patient Name,Scheme,Disease,Facility,Date,Status\r\n";
+    
+    pendingApprovals.forEach(item => {
+      const row = [
+        item.id,
+        item.patientName,
+        item.schemeName,
+        item.disease || "N/A",
+        item.facilityName,
+        item.date,
+        item.status
+      ];
+      csvContent += row.map(field => `"${field}"`).join(",") + "\r\n";
+    });
+    
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${title.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success("Export successful", {
+      description: "The data has been exported as a CSV file."
+    });
+  };
+
+  // Limit the number of items shown for facility role to 5
+  const displayedApprovals = userRole === "facility" 
+    ? pendingApprovals.slice(0, 5) 
+    : pendingApprovals;
+
   return (
     <>
       <Card className="col-span-full">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>{title}</CardTitle>
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={exportData}
+            className="flex items-center"
+          >
+            <Download className="h-4 w-4 mr-2" /> Export Data
+          </Button>
         </CardHeader>
         <CardContent>
           {pendingApprovals.length > 0 ? (
@@ -178,7 +261,7 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pendingApprovals.map((approval) => (
+                  {displayedApprovals.map((approval) => (
                     <TableRow key={approval.id}>
                       <TableCell className="font-medium">{approval.patientName}</TableCell>
                       <TableCell>{approval.schemeName}</TableCell>
