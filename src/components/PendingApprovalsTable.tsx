@@ -1,31 +1,14 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check, X, AlertCircle, Info, Download } from "lucide-react";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Download } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-
-interface Approval {
-  id: string;
-  patientName: string;
-  schemeName: string;
-  date: string;
-  status: string;
-  facilityName: string;
-  disease?: string;
-  history?: string;
-  notes?: string;
-}
+import ApprovalItem from "./approval/ApprovalItem";
+import EmptyApprovals from "./approval/EmptyApprovals";
+import ApprovalDetailsDialog from "./approval/ApprovalDetailsDialog";
+import RejectApprovalDialog from "./approval/RejectApprovalDialog";
+import { Approval, getNextLevel, exportApprovalsToCSV } from "@/utils/approvalUtils";
 
 // Sample data - in a real app this would come from an API
 const sampleApprovals: Approval[] = [
@@ -126,22 +109,6 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState<boolean>(false);
   const [rejectionReason, setRejectionReason] = useState<string>("");
 
-  // Define the next level based on current role
-  const getNextLevel = (currentRole: string): string => {
-    switch (currentRole) {
-      case "facility":
-        return "hospital";
-      case "hospital":
-        return "district";
-      case "district":
-        return "state";
-      case "state":
-        return "super";
-      default:
-        return "approved";
-    }
-  };
-
   // Handle approval
   const handleApprove = (approval: Approval) => {
     const nextLevel = getNextLevel(userRole);
@@ -195,32 +162,7 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
 
   // Export data as CSV
   const exportData = () => {
-    // Create CSV content
-    let csvContent = "ID,Patient Name,Scheme,Disease,Facility,Date,Status\r\n";
-    
-    pendingApprovals.forEach(item => {
-      const row = [
-        item.id,
-        item.patientName,
-        item.schemeName,
-        item.disease || "N/A",
-        item.facilityName,
-        item.date,
-        item.status
-      ];
-      csvContent += row.map(field => `"${field}"`).join(",") + "\r\n";
-    });
-    
-    // Create and trigger download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${title.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
+    exportApprovalsToCSV(pendingApprovals, title);
     toast.success("Export successful", {
       description: "The data has been exported as a CSV file."
     });
@@ -262,114 +204,37 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
                 </TableHeader>
                 <TableBody>
                   {displayedApprovals.map((approval) => (
-                    <TableRow key={approval.id}>
-                      <TableCell className="font-medium">{approval.patientName}</TableCell>
-                      <TableCell>{approval.schemeName}</TableCell>
-                      <TableCell>{approval.disease}</TableCell>
-                      {userRole !== "facility" && <TableCell>{approval.facilityName}</TableCell>}
-                      <TableCell>{approval.date}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                          Pending
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => openDetails(approval)}>
-                          <Info className="h-4 w-4 text-blue-600" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="h-8 w-8 p-0" 
-                          onClick={() => handleApprove(approval)}
-                        >
-                          <Check className="h-4 w-4 text-green-600" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="h-8 w-8 p-0"
-                          onClick={() => openRejectDialog(approval)}
-                        >
-                          <X className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                    <ApprovalItem 
+                      key={approval.id}
+                      approval={approval}
+                      userRole={userRole}
+                      onDetailsClick={openDetails}
+                      onApprove={handleApprove}
+                      onReject={openRejectDialog}
+                    />
                   ))}
                 </TableBody>
               </Table>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">No pending approvals</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                There are no scheme recommendations awaiting your approval at this time.
-              </p>
-            </div>
+            <EmptyApprovals />
           )}
         </CardContent>
       </Card>
 
-      {/* Details Dialog */}
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Patient Details</DialogTitle>
-          </DialogHeader>
-          {selectedApproval && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-medium text-sm">Patient Information</h3>
-                <p className="text-sm mt-1">Name: {selectedApproval.patientName}</p>
-                <p className="text-sm mt-1">Disease: {selectedApproval.disease}</p>
-              </div>
-              
-              <div>
-                <h3 className="font-medium text-sm">Medical History</h3>
-                <p className="text-sm mt-1">{selectedApproval.history}</p>
-              </div>
-              
-              <div>
-                <h3 className="font-medium text-sm">Recommended Scheme</h3>
-                <p className="text-sm mt-1">{selectedApproval.schemeName}</p>
-              </div>
-              
-              {selectedApproval.notes && (
-                <div>
-                  <h3 className="font-medium text-sm">Additional Notes</h3>
-                  <p className="text-sm mt-1">{selectedApproval.notes}</p>
-                </div>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ApprovalDetailsDialog 
+        isOpen={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        approval={selectedApproval}
+      />
 
-      {/* Reject Dialog */}
-      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Reject Recommendation</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for rejecting this scheme recommendation.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea 
-            placeholder="Enter reason for rejection"
-            value={rejectionReason}
-            onChange={(e) => setRejectionReason(e.target.value)}
-            className="min-h-[100px]"
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject}>Reject</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RejectApprovalDialog 
+        isOpen={isRejectDialogOpen}
+        onOpenChange={setIsRejectDialogOpen}
+        rejectionReason={rejectionReason}
+        onReasonChange={setRejectionReason}
+        onConfirmReject={handleReject}
+      />
     </>
   );
 };
