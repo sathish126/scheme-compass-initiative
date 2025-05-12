@@ -1,15 +1,18 @@
 
-import React from "react";
+import React, { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatsCard from "@/components/StatsCard";
 import { useAuth } from "@/contexts/AuthContext";
 import SchemeRecommendationsChart from "@/components/SchemeRecommendationsChart";
 import PendingApprovalsTable from "@/components/PendingApprovalsTable";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { statsMap } from "@/lib/mock-data";
 import { Map, UserCheck, BuildingIcon, BarChart3, Download, FileBarChart, MapPin } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getAlternativeSchemes } from "@/utils/approvalUtils";
+import { toast } from "@/components/ui/sonner";
 
 const trendData = [
   { name: "Jan", approvals: 65, beneficiaries: 42 },
@@ -23,6 +26,14 @@ const trendData = [
 const StateDashboard = () => {
   const { user } = useAuth();
   const stats = statsMap.state;
+  const [selectedDisease, setSelectedDisease] = useState<string>("diabetes");
+  const alternativeSchemes = getAlternativeSchemes(selectedDisease);
+
+  const handleRecommendPolicy = () => {
+    toast.success("Policy recommendation submitted", {
+      description: `Your recommendation for additional schemes for ${selectedDisease} has been submitted to Super Admin.`
+    });
+  };
 
   return (
     <DashboardLayout>
@@ -37,7 +48,7 @@ const StateDashboard = () => {
               <Download className="mr-2 h-4 w-4" /> Export Report
             </Button>
             <Button className="bg-healthcare-600 hover:bg-healthcare-700">
-              <FileBarChart className="mr-2 h-4 w-4" /> Policy Analysis
+              <FileBarChart className="mr-2 h-4 w-4" /> Policy Recommendations
             </Button>
           </div>
         </div>
@@ -96,6 +107,56 @@ const StateDashboard = () => {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
+              <CardTitle>Policy Recommendations</CardTitle>
+              <CardDescription>Recommend alternative schemes for patients based on disease</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Select Disease/Condition</label>
+                  <Select 
+                    value={selectedDisease} 
+                    onValueChange={setSelectedDisease}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select disease" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="diabetes">Diabetes</SelectItem>
+                      <SelectItem value="hypertension">Hypertension</SelectItem>
+                      <SelectItem value="malaria">Malaria</SelectItem>
+                      <SelectItem value="tuberculosis">Tuberculosis</SelectItem>
+                      <SelectItem value="dengue">Dengue</SelectItem>
+                      <SelectItem value="cancer">Cancer</SelectItem>
+                      <SelectItem value="mental_health">Mental Health</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="pt-4">
+                  <h4 className="text-sm font-medium mb-2">Recommended Alternative Schemes:</h4>
+                  <div className="space-y-2">
+                    {alternativeSchemes.map((scheme, idx) => (
+                      <div key={idx} className="flex items-center p-2 border rounded-md">
+                        <div className="w-2 h-2 rounded-full bg-healthcare-500 mr-2"></div>
+                        <span>{scheme}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Button 
+                  className="w-full mt-2 bg-healthcare-600 hover:bg-healthcare-700"
+                  onClick={handleRecommendPolicy}
+                >
+                  Submit Policy Recommendation
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>District Performance</CardTitle>
             </CardHeader>
             <CardContent>
@@ -114,60 +175,6 @@ const StateDashboard = () => {
                     </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Scheme Coverage by Category</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <div className="w-full">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">General</p>
-                      <span className="text-sm text-muted-foreground">45%</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="bg-blue-500 h-full rounded-full" style={{ width: "45%" }}></div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-full">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">OBC</p>
-                      <span className="text-sm text-muted-foreground">72%</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="bg-green-500 h-full rounded-full" style={{ width: "72%" }}></div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-full">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">SC</p>
-                      <span className="text-sm text-muted-foreground">83%</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="bg-purple-500 h-full rounded-full" style={{ width: "83%" }}></div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-full">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">ST</p>
-                      <span className="text-sm text-muted-foreground">78%</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="bg-orange-500 h-full rounded-full" style={{ width: "78%" }}></div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>

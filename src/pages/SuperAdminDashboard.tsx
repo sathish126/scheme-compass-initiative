@@ -1,14 +1,20 @@
 
-import React from "react";
+import React, { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatsCard from "@/components/StatsCard";
 import { useAuth } from "@/contexts/AuthContext";
 import SchemeRecommendationsChart from "@/components/SchemeRecommendationsChart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { statsMap } from "@/lib/mock-data";
 import { Globe, UserCog, Building2, BarChart2, Download, PlusCircle, Settings, MapPin } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { toast } from "@/components/ui/sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const data = [
   { month: "Jan", beneficiaries: 5000 },
@@ -28,6 +34,45 @@ const data = [
 const SuperAdminDashboard = () => {
   const { user } = useAuth();
   const stats = statsMap.super;
+  const [newSchemeName, setNewSchemeName] = useState("");
+  const [schemeDescription, setSchemeDescription] = useState("");
+  const [schemeCategory, setSchemeCategory] = useState("general");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleAddNewScheme = () => {
+    if (!newSchemeName.trim()) {
+      toast.error("Please enter a scheme name");
+      return;
+    }
+
+    toast.success(`New scheme "${newSchemeName}" added successfully`, {
+      description: "The scheme has been added to the database and is now available for recommendations."
+    });
+
+    // Reset form
+    setNewSchemeName("");
+    setSchemeDescription("");
+    setSchemeCategory("general");
+    setIsDialogOpen(false);
+  };
+
+  const handleExportAnnualReport = () => {
+    toast.success("Annual report export initiated", {
+      description: "Your report is being generated and will download shortly."
+    });
+    
+    // Simulate download delay
+    setTimeout(() => {
+      const link = document.createElement("a");
+      link.setAttribute("href", "#");
+      link.setAttribute("download", `annual-report-${new Date().getFullYear()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Annual report downloaded successfully");
+    }, 1500);
+  };
 
   return (
     <DashboardLayout>
@@ -38,12 +83,70 @@ const SuperAdminDashboard = () => {
             <p className="text-muted-foreground">Super Admin Dashboard</p>
           </div>
           <div>
-            <Button variant="outline" className="mr-2">
+            <Button variant="outline" className="mr-2" onClick={handleExportAnnualReport}>
               <Download className="mr-2 h-4 w-4" /> Export Annual Report
             </Button>
-            <Button className="bg-healthcare-600 hover:bg-healthcare-700">
-              <Settings className="mr-2 h-4 w-4" /> System Settings
-            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-healthcare-600 hover:bg-healthcare-700">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add New Scheme
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Healthcare Scheme</DialogTitle>
+                  <DialogDescription>
+                    Create a new healthcare scheme to be available for patient recommendations.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="scheme-name" className="text-right">Scheme Name</Label>
+                    <Input 
+                      id="scheme-name" 
+                      value={newSchemeName} 
+                      onChange={(e) => setNewSchemeName(e.target.value)} 
+                      className="col-span-3" 
+                      placeholder="Enter scheme name" 
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="scheme-category" className="text-right">Category</Label>
+                    <Select 
+                      value={schemeCategory} 
+                      onValueChange={setSchemeCategory}
+                    >
+                      <SelectTrigger className="col-span-3" id="scheme-category">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">General</SelectItem>
+                        <SelectItem value="chronic">Chronic Disease</SelectItem>
+                        <SelectItem value="maternal">Maternal Care</SelectItem>
+                        <SelectItem value="pediatric">Pediatric Care</SelectItem>
+                        <SelectItem value="elderly">Elderly Care</SelectItem>
+                        <SelectItem value="emergency">Emergency Care</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="scheme-description" className="text-right pt-2">Description</Label>
+                    <Textarea 
+                      id="scheme-description" 
+                      value={schemeDescription} 
+                      onChange={(e) => setSchemeDescription(e.target.value)} 
+                      className="col-span-3" 
+                      placeholder="Describe the scheme benefits and eligibility criteria" 
+                      rows={4}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleAddNewScheme} className="bg-healthcare-600 hover:bg-healthcare-700">Add Scheme</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -78,7 +181,7 @@ const SuperAdminDashboard = () => {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>National Scheme Beneficiary Growth</CardTitle>
             <Button variant="outline" size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Data
+              <Download className="mr-2 h-4 w-4" /> Export Data
             </Button>
           </CardHeader>
           <CardContent>
@@ -165,7 +268,7 @@ const SuperAdminDashboard = () => {
                     </Button>
                   </div>
                 ))}
-                <Button size="sm" variant="outline" className="w-full">
+                <Button size="sm" variant="outline" className="w-full" onClick={() => setIsDialogOpen(true)}>
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Add New Scheme
                 </Button>
