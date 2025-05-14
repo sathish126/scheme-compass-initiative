@@ -21,7 +21,14 @@ import DistrictStats from "./pages/DistrictStats";
 import StateStats from "./pages/StateStats";
 import SystemSettings from "./pages/SystemSettings";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

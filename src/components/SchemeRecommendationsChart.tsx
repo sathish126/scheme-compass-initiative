@@ -10,12 +10,13 @@ interface ChartData {
   rejected: number;
 }
 
+// Empty data structure
 const data: ChartData[] = [
-  { name: "Health For All", suggested: 65, approved: 48, rejected: 12 },
-  { name: "Senior Care", suggested: 45, approved: 38, rejected: 5 },
-  { name: "Maternal", suggested: 35, approved: 30, rejected: 3 },
-  { name: "Child Health", suggested: 50, approved: 42, rejected: 6 },
-  { name: "Universal", suggested: 75, approved: 60, rejected: 10 },
+  { name: "Health For All", suggested: 0, approved: 0, rejected: 0 },
+  { name: "Senior Care", suggested: 0, approved: 0, rejected: 0 },
+  { name: "Maternal", suggested: 0, approved: 0, rejected: 0 },
+  { name: "Child Health", suggested: 0, approved: 0, rejected: 0 },
+  { name: "Universal", suggested: 0, approved: 0, rejected: 0 },
 ];
 
 const SchemeRecommendationsChart: React.FC = () => {

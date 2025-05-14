@@ -9,17 +9,20 @@ import { ClipboardList, Users, UserCheck, PlusCircle, ArrowRight, Building, Chec
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
-import { patients } from "@/lib/mock-data";
+import { Patient } from "@/types";
 import { exportPatientsToCSV } from "@/utils/approvalUtils";
 
 const FacilityDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  // Sample data for facility's patients
-  const facilityPatients = patients.slice(0, 10); // Just use first 10 patients as example
+  const [facilityPatients] = useState<Patient[]>([]);
   
   const handleExportPatientData = () => {
+    if (facilityPatients.length === 0) {
+      toast.error("No patient data to export");
+      return;
+    }
+    
     exportPatientsToCSV(facilityPatients, "Patient-Records");
     toast.success("Patient records exported successfully");
   };
@@ -90,32 +93,35 @@ const FacilityDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Total Patients"
-            value="48"
+            value="0"
             icon={<Users className="h-4 w-4" />}
-            description="4 new patients this week"
-            trend={{ value: 12, isPositive: true }}
+            description="No new patients this week"
           />
           <StatsCard
             title="Registered Today"
-            value="5"
+            value="0"
             icon={<ClipboardList className="h-4 w-4" />}
             description="New patient registrations"
           />
           <StatsCard
             title="Pending Approvals"
-            value="10"
+            value="0"
             icon={<ClipboardList className="h-4 w-4" />}
             description="Awaiting hospital review"
           />
           <StatsCard
             title="Patient Follow-ups"
-            value="12"
+            value="0"
             icon={<UserCheck className="h-4 w-4" />}
             description="Due this week"
           />
         </div>
 
-        <PendingApprovalsTable title="Patient Scheme Recommendations" userRole="facility" />
+        <PendingApprovalsTable 
+          title="Patient Scheme Recommendations" 
+          userRole="facility" 
+          externalApprovals={[]} 
+        />
       </div>
     </DashboardLayout>
   );

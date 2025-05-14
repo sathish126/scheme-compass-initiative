@@ -7,27 +7,35 @@ import SchemeRecommendationsChart from "@/components/SchemeRecommendationsChart"
 import PendingApprovalsTable from "@/components/PendingApprovalsTable";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { statsMap } from "@/lib/mock-data";
 import { Map, UserCheck, BuildingIcon, BarChart3, Download, FileBarChart, MapPin } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAlternativeSchemes } from "@/utils/approvalUtils";
 import { toast } from "@/components/ui/sonner";
 
-const trendData = [
-  { name: "Jan", approvals: 65, beneficiaries: 42 },
-  { name: "Feb", approvals: 78, beneficiaries: 50 },
-  { name: "Mar", approvals: 90, beneficiaries: 65 },
-  { name: "Apr", approvals: 85, beneficiaries: 70 },
-  { name: "May", approvals: 120, beneficiaries: 85 },
-  { name: "Jun", approvals: 150, beneficiaries: 105 },
+// Empty trend data structure
+const emptyTrendData = [
+  { name: "Jan", approvals: 0, beneficiaries: 0 },
+  { name: "Feb", approvals: 0, beneficiaries: 0 },
+  { name: "Mar", approvals: 0, beneficiaries: 0 },
+  { name: "Apr", approvals: 0, beneficiaries: 0 },
+  { name: "May", approvals: 0, beneficiaries: 0 },
+  { name: "Jun", approvals: 0, beneficiaries: 0 },
 ];
 
 const StateDashboard = () => {
   const { user } = useAuth();
-  const stats = statsMap.state;
   const [selectedDisease, setSelectedDisease] = useState<string>("diabetes");
   const alternativeSchemes = getAlternativeSchemes(selectedDisease);
+  
+  // Empty stats object
+  const stats = {
+    totalPatients: 0,
+    totalRecommendations: 0,
+    pendingApprovals: 0,
+    approvedRecommendations: 0,
+    rejectedRecommendations: 0
+  };
 
   const handleRecommendPolicy = () => {
     toast.success("Policy recommendation submitted", {
@@ -56,13 +64,13 @@ const StateDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Total Districts"
-            value="12"
+            value="0"
             icon={<Map className="h-4 w-4" />}
             description="In your state"
           />
           <StatsCard
             title="Total Hospitals"
-            value="86"
+            value="0"
             icon={<BuildingIcon className="h-4 w-4" />}
             description="Across all districts"
           />
@@ -70,7 +78,7 @@ const StateDashboard = () => {
             title="Total Patients"
             value={stats.totalPatients}
             icon={<UserCheck className="h-4 w-4" />}
-            trend={{ value: 15, isPositive: true }}
+            description="Registered in the system"
           />
           <StatsCard
             title="Pending Approvals"
@@ -88,7 +96,7 @@ const StateDashboard = () => {
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={trendData}
+                  data={emptyTrendData}
                   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
@@ -167,10 +175,10 @@ const StateDashboard = () => {
                     <div className="w-full">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">{district} District</p>
-                        <span className="text-sm text-muted-foreground">{85 - i * 5}%</span>
+                        <span className="text-sm text-muted-foreground">0%</span>
                       </div>
                       <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
-                        <div className="bg-healthcare-500 h-full rounded-full" style={{ width: `${85 - i * 5}%` }}></div>
+                        <div className="bg-healthcare-500 h-full rounded-full" style={{ width: "0%" }}></div>
                       </div>
                     </div>
                   </div>
@@ -181,7 +189,7 @@ const StateDashboard = () => {
         </div>
 
         <SchemeRecommendationsChart />
-        <PendingApprovalsTable title="Pending State Approvals" userRole="state" />
+        <PendingApprovalsTable title="Pending State Approvals" userRole="state" externalApprovals={[]} />
       </div>
     </DashboardLayout>
   );

@@ -10,80 +10,6 @@ import ApprovalDetailsDialog from "./approval/ApprovalDetailsDialog";
 import RejectApprovalDialog from "./approval/RejectApprovalDialog";
 import { Approval, getNextLevel, exportApprovalsToCSV } from "@/utils/approvalUtils";
 
-// Sample data - in a real app this would come from an API
-const sampleApprovals: Approval[] = [
-  { 
-    id: "1", 
-    patientName: "John Doe", 
-    schemeName: "Health For All", 
-    date: "2023-05-01", 
-    status: "pending", 
-    facilityName: "City Hospital",
-    disease: "Diabetes",
-    history: "Type 2 diabetes diagnosed 2 years ago. Currently on medication."
-  },
-  { 
-    id: "2", 
-    patientName: "Mary Johnson", 
-    schemeName: "Senior Care Plus", 
-    date: "2023-05-02", 
-    status: "pending", 
-    facilityName: "City Hospital",
-    disease: "Hypertension",
-    history: "High blood pressure, on medication for 5 years."
-  },
-  { 
-    id: "3", 
-    patientName: "Raj Patel", 
-    schemeName: "Universal Health Coverage", 
-    date: "2023-05-03", 
-    status: "pending", 
-    facilityName: "Rural Clinic",
-    disease: "Tuberculosis",
-    history: "Recently diagnosed, starting treatment."
-  },
-  { 
-    id: "4", 
-    patientName: "Priya Singh", 
-    schemeName: "Health For All", 
-    date: "2023-05-04", 
-    status: "pending", 
-    facilityName: "District Hospital",
-    disease: "Malaria",
-    history: "Recurrent episodes, currently stable."
-  },
-  { 
-    id: "5", 
-    patientName: "David Kim", 
-    schemeName: "Child Health Initiative", 
-    date: "2023-05-05", 
-    status: "pending", 
-    facilityName: "Community Center",
-    disease: "Dengue",
-    history: "First episode, recovering."
-  },
-  { 
-    id: "6", 
-    patientName: "Sarah Wilson", 
-    schemeName: "Mental Health Support", 
-    date: "2023-05-06", 
-    status: "pending", 
-    facilityName: "City Hospital",
-    disease: "Anxiety",
-    history: "Recently diagnosed with generalized anxiety disorder."
-  },
-  { 
-    id: "7", 
-    patientName: "Michael Brown", 
-    schemeName: "Senior Care Plus", 
-    date: "2023-05-07", 
-    status: "pending", 
-    facilityName: "Elder Care Center",
-    disease: "Arthritis",
-    history: "Chronic joint pain for over a decade."
-  },
-];
-
 interface PendingApprovalsTableProps {
   title?: string;
   userRole?: string;
@@ -100,9 +26,9 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
   onApprove,
   onReject
 }) => {
-  // Use external approvals if provided, otherwise use sample data
+  // Use external approvals if provided, otherwise use empty array
   const [pendingApprovals, setPendingApprovals] = useState<Approval[]>(
-    externalApprovals || sampleApprovals
+    externalApprovals || []
   );
   const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
@@ -183,6 +109,7 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
             size="sm"
             onClick={exportData}
             className="flex items-center"
+            disabled={pendingApprovals.length === 0}
           >
             <Download className="h-4 w-4 mr-2" /> Export Data
           </Button>

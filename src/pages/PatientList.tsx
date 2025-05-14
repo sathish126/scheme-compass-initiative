@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,14 +20,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { patients } from "@/lib/mock-data";
 import { format } from "date-fns";
 import { PlusCircle, Search, MoreHorizontal, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Patient } from "@/types";
 
 const PatientList = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = React.useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  // Empty patients array instead of mock data
+  const [patients, setPatients] = useState<Patient[]>([]);
   
   const filteredPatients = patients.filter((patient) =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -86,7 +88,7 @@ const PatientList = () => {
               {filteredPatients.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8">
-                    No patients found. Try adjusting your search.
+                    No patients found. Add patients using the "Add New Patient" button.
                   </TableCell>
                 </TableRow>
               ) : (
