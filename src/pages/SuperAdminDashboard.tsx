@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { statsMap } from "@/lib/mock-data";
 import { Globe, UserCog, Building2, BarChart2, Download, PlusCircle, Settings, MapPin } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "@/components/ui/sonner";
@@ -33,7 +32,6 @@ const data = [
 
 const SuperAdminDashboard = () => {
   const { user } = useAuth();
-  const stats = statsMap.super;
   const [newSchemeName, setNewSchemeName] = useState("");
   const [schemeDescription, setSchemeDescription] = useState("");
   const [schemeCategory, setSchemeCategory] = useState("general");
@@ -153,27 +151,25 @@ const SuperAdminDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Total States"
-            value="8"
+            value="0"
             icon={<Globe className="h-4 w-4" />}
             description="Connected to platform"
           />
           <StatsCard
             title="Total Districts"
-            value="62"
+            value="0"
             icon={<MapPin className="h-4 w-4" />}
-            trend={{ value: 5, isPositive: true }}
           />
           <StatsCard
             title="Total Patients"
-            value={stats.totalPatients}
+            value="0"
             icon={<UserCog className="h-4 w-4" />}
             description="Nationwide coverage"
           />
           <StatsCard
             title="Total Hospitals"
-            value="586"
+            value="0"
             icon={<Building2 className="h-4 w-4" />}
-            trend={{ value: 12, isPositive: true }}
           />
         </div>
 

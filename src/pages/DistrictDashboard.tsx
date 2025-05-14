@@ -7,7 +7,6 @@ import SchemeRecommendationsChart from "@/components/SchemeRecommendationsChart"
 import PendingApprovalsTable from "@/components/PendingApprovalsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { statsMap } from "@/lib/mock-data";
 import { 
   Building, UserCheck, CheckCircle, AlertCircle, 
   Download, BarChart3, ArrowRight, ShieldCheck 
@@ -25,7 +24,6 @@ const data = [
 
 const DistrictDashboard = () => {
   const { user } = useAuth();
-  const stats = statsMap.district;
 
   return (
     <DashboardLayout>
@@ -87,25 +85,24 @@ const DistrictDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Total Patients"
-            value={stats.totalPatients}
+            value="0"
             icon={<UserCheck className="h-4 w-4" />}
             description="Across all hospitals"
           />
           <StatsCard
             title="Hospitals"
-            value="8"
+            value="0"
             icon={<Building className="h-4 w-4" />}
             description="In your district"
           />
           <StatsCard
             title="Approved Recommendations"
-            value={stats.approvedRecommendations}
+            value="0"
             icon={<CheckCircle className="h-4 w-4" />}
-            trend={{ value: 8, isPositive: true }}
           />
           <StatsCard
             title="Pending Approvals"
-            value={stats.pendingApprovals}
+            value="0"
             icon={<AlertCircle className="h-4 w-4" />}
             description="Requiring your attention"
           />
