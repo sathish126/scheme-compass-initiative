@@ -6,14 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import SchemeRecommendationsChart from "@/components/SchemeRecommendationsChart";
 import PendingApprovalsTable from "@/components/PendingApprovalsTable";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { statsMap } from "@/lib/mock-data";
+import { Card, CardContent } from "@/components/ui/card";
 import { Building2, Users, CheckCircle, AlertCircle, Download, ArrowRight, ClipboardList, Shield, Table } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const HospitalDashboard = () => {
   const { user } = useAuth();
-  const stats = statsMap.hospital;
   const navigate = useNavigate();
 
   return (
@@ -76,24 +74,23 @@ const HospitalDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Total Patients"
-            value={stats.totalPatients}
+            value="0"
             icon={<Users className="h-4 w-4" />}
             description="From all facilities"
           />
           <StatsCard
             title="Total Recommendations"
-            value={stats.totalRecommendations}
+            value="0"
             icon={<Building2 className="h-4 w-4" />}
           />
           <StatsCard
             title="Approved Recommendations"
-            value={stats.approvedRecommendations}
+            value="0"
             icon={<CheckCircle className="h-4 w-4" />}
-            trend={{ value: 12, isPositive: true }}
           />
           <StatsCard
             title="Pending Approvals"
-            value={stats.pendingApprovals}
+            value="0"
             icon={<AlertCircle className="h-4 w-4" />}
             description="Requiring your attention"
           />
