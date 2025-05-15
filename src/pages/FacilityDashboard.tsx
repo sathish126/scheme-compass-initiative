@@ -5,7 +5,16 @@ import DashboardLayout from "@/components/DashboardLayout";
 import StatsCard from "@/components/StatsCard";
 import PendingApprovalsTable from "@/components/PendingApprovalsTable";
 import { useAuth } from "@/contexts/AuthContext";
-import { ClipboardList, Users, UserCheck, PlusCircle, ArrowRight, Building, CheckCircle } from "lucide-react";
+import { 
+  ClipboardList, 
+  Users, 
+  UserCheck, 
+  PlusCircle, 
+  ArrowRight, 
+  Building, 
+  CheckCircle,
+  BookOpen 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
@@ -35,13 +44,29 @@ const FacilityDashboard = () => {
         }
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
+        
+        // Fallback to mock data on error
+        setStats({
+          totalPatients: 245,
+          registeredToday: 8,
+          pendingApprovals: 12,
+          patientFollowups: 5
+        });
+        
+        toast.error("Could not connect to backend server", {
+          description: "Using fallback data. Check server connection.",
+          action: {
+            label: "Integration Guide",
+            onClick: () => navigate("/get-started")
+          }
+        });
       } finally {
         setLoading(false);
       }
     };
     
     fetchStats();
-  }, [user]);
+  }, [user, navigate]);
   
   const handleExportPatientData = () => {
     if (facilityPatients.length === 0) {
@@ -64,12 +89,19 @@ const FacilityDashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Welcome back, {user?.name}</h1>
             <p className="text-muted-foreground">{user?.facility} - Facility Dashboard</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/get-started")}
+              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+            >
+              <BookOpen className="mr-2 h-4 w-4" /> Integration Guide
+            </Button>
             <Button 
               variant="outline" 
               onClick={handleExportPatientData}

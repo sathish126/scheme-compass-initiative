@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Database, FileText, TrendingUp, Users, Link, Shield } from "lucide-react";
+import { Database, FileText, TrendingUp, Users, Link, Shield, BookOpen } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
@@ -74,13 +74,26 @@ const Index = () => {
           <p className="text-healthcare-700 mb-8">
             Health Data Information Management System for healthcare professionals
           </p>
-          <Button 
-            className="w-full py-6 bg-healthcare-600 hover:bg-healthcare-700 mb-4 text-lg"
-            onClick={() => navigate('/login')}
-          >
-            Log In
-          </Button>
-          <p className="text-sm text-muted-foreground">
+          
+          <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+            <Button 
+              className="w-full py-6 bg-healthcare-600 hover:bg-healthcare-700 text-lg"
+              onClick={() => navigate('/login')}
+            >
+              Log In
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full py-6 border-healthcare-600 text-healthcare-700 hover:bg-healthcare-50 text-lg"
+              onClick={() => navigate('/get-started')}
+            >
+              <BookOpen className="mr-2 h-5 w-5" />
+              Get Started
+            </Button>
+          </div>
+          
+          <p className="text-sm text-muted-foreground mt-4">
             Access the healthcare data management platform
           </p>
         </div>
