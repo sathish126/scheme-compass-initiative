@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatsCard from "@/components/StatsCard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,10 +9,50 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Building2, Users, CheckCircle, AlertCircle, Download, ArrowRight, ClipboardList, Shield, Table } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getDashboardStats, getApprovalsByLevel } from "@/utils/localStorageUtils";
+import Loading from "@/components/ui/loading";
 
 const HospitalDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalPatients: 0,
+    registeredToday: 0,
+    pendingApprovals: 0,
+    patientFollowups: 0
+  });
+  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Load data from localStorage
+    const loadDashboardData = () => {
+      try {
+        // Get stats from localStorage
+        const dashboardStats = getDashboardStats("hospital");
+        setStats(dashboardStats);
+        
+        // Get hospital-level approvals
+        const approvals = getApprovalsByLevel("hospital");
+        setPendingApprovals(approvals);
+        
+        setLoading(false);
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+        setLoading(false);
+      }
+    };
+    
+    loadDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <Loading size="large" text="Loading dashboard data..." />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -74,23 +114,23 @@ const HospitalDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Total Patients"
-            value="0"
+            value={stats.totalPatients.toString()}
             icon={<Users className="h-4 w-4" />}
             description="From all facilities"
           />
           <StatsCard
             title="Total Recommendations"
-            value="0"
+            value={(stats.pendingApprovals + stats.patientFollowups).toString()}
             icon={<Building2 className="h-4 w-4" />}
           />
           <StatsCard
             title="Approved Recommendations"
-            value="0"
+            value={stats.patientFollowups.toString()}
             icon={<CheckCircle className="h-4 w-4" />}
           />
           <StatsCard
             title="Pending Approvals"
-            value="0"
+            value={stats.pendingApprovals.toString()}
             icon={<AlertCircle className="h-4 w-4" />}
             description="Requiring your attention"
           />
@@ -99,7 +139,11 @@ const HospitalDashboard = () => {
         <SchemeRecommendationsChart />
         
         <div id="pending-approvals">
-          <PendingApprovalsTable title="Pending Hospital Approvals" userRole="hospital" />
+          <PendingApprovalsTable 
+            title="Pending Hospital Approvals" 
+            userRole="hospital"
+            externalApprovals={pendingApprovals} 
+          />
         </div>
       </div>
     </DashboardLayout>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,13 +8,14 @@ import ApprovalItem from "./approval/ApprovalItem";
 import EmptyApprovals from "./approval/EmptyApprovals";
 import ApprovalDetailsDialog from "./approval/ApprovalDetailsDialog";
 import RejectApprovalDialog from "./approval/RejectApprovalDialog";
-import { Approval, getNextLevel, exportApprovalsToCSV } from "@/utils/approvalUtils";
+import { Approval, exportApprovalsToCSV } from "@/utils/approvalUtils";
+import { approveRecommendation, rejectRecommendation } from "@/utils/localStorageUtils";
 
 interface PendingApprovalsTableProps {
   title?: string;
   userRole?: string;
   // Additional props to handle global approval state
-  externalApprovals?: Approval[];
+  externalApprovals?: any[];
   onApprove?: (approval: Approval) => void;
   onReject?: (approval: Approval, reason: string) => void;
 }
@@ -22,38 +23,40 @@ interface PendingApprovalsTableProps {
 const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({ 
   title = "Pending Approvals", 
   userRole = "hospital",
-  externalApprovals,
+  externalApprovals = [],
   onApprove,
   onReject
 }) => {
-  // Use external approvals if provided, otherwise use empty array
-  const [pendingApprovals, setPendingApprovals] = useState<Approval[]>(
-    externalApprovals || []
-  );
-  const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);
+  // Use external approvals if provided
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>(externalApprovals);
+  const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState<boolean>(false);
   const [rejectionReason, setRejectionReason] = useState<string>("");
 
+  // Update approvals when external approvals change
+  useEffect(() => {
+    setPendingApprovals(externalApprovals);
+  }, [externalApprovals]);
+
   // Handle approval
-  const handleApprove = (approval: Approval) => {
-    const nextLevel = getNextLevel(userRole);
-    
+  const handleApprove = (approval: any) => {
     // If we have external approval handler, use that
     if (onApprove) {
       onApprove(approval);
     } else {
-      // Otherwise handle locally
+      // Otherwise handle locally with localStorage
+      approveRecommendation(approval.id);
       setPendingApprovals(pendingApprovals.filter(item => item.id !== approval.id));
     }
     
     toast.success(`Scheme recommendation for ${approval.patientName} approved successfully`, {
-      description: `The recommendation has been sent to ${nextLevel === "approved" ? "the patient" : `${nextLevel} admin`} for ${nextLevel === "approved" ? "implementation" : "further review"}.`
+      description: `The recommendation has been sent to the next level for review.`
     });
   };
 
   // Handle rejection dialog
-  const openRejectDialog = (approval: Approval) => {
+  const openRejectDialog = (approval: any) => {
     setSelectedApproval(approval);
     setIsRejectDialogOpen(true);
   };
@@ -66,7 +69,8 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
     if (onReject) {
       onReject(selectedApproval, rejectionReason);
     } else {
-      // Otherwise handle locally
+      // Otherwise handle locally with localStorage
+      rejectRecommendation(selectedApproval.id);
       setPendingApprovals(pendingApprovals.filter(item => item.id !== selectedApproval.id));
     }
     
@@ -81,7 +85,7 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
   };
 
   // Handle opening details
-  const openDetails = (approval: Approval) => {
+  const openDetails = (approval: any) => {
     setSelectedApproval(approval);
     setIsDetailsOpen(true);
   };

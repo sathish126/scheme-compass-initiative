@@ -19,14 +19,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
 import { Patient } from "@/types";
-import { getDashboardStats } from "@/api";
+import { getDashboardStats, getApprovalsByLevel } from "@/utils/localStorageUtils";
 import { exportPatientsToCSV } from "@/utils/approvalUtils";
 import Loading from "@/components/ui/loading";
 
 const FacilityDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [facilityPatients] = useState<Patient[]>([]);
+  const [facilityPatients, setFacilityPatients] = useState<Patient[]>([]);
   const [stats, setStats] = useState({
     totalPatients: 0,
     registeredToday: 0,
@@ -34,31 +34,22 @@ const FacilityDashboard = () => {
     patientFollowups: 0
   });
   const [loading, setLoading] = useState(true);
+  const [pendingApprovals, setPendingApprovals] = useState([]);
   
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        if (user) {
-          const data = await getDashboardStats("facility");
-          setStats(data);
-        }
+        // Get stats from localStorage instead of API
+        const data = getDashboardStats("facility");
+        setStats(data);
+        
+        // Get facility-level approvals
+        const approvals = getApprovalsByLevel("facility");
+        setPendingApprovals(approvals);
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
-        
-        // Fallback to mock data on error
-        setStats({
-          totalPatients: 245,
-          registeredToday: 8,
-          pendingApprovals: 12,
-          patientFollowups: 5
-        });
-        
-        toast.error("Could not connect to backend server", {
-          description: "Using fallback data. Check server connection.",
-          action: {
-            label: "Integration Guide",
-            onClick: () => navigate("/get-started")
-          }
+        toast.error("Error loading dashboard data", {
+          description: "Please try again later.",
         });
       } finally {
         setLoading(false);
@@ -186,7 +177,7 @@ const FacilityDashboard = () => {
         <PendingApprovalsTable 
           title="Patient Scheme Recommendations" 
           userRole="facility" 
-          externalApprovals={[]} 
+          externalApprovals={pendingApprovals} 
         />
       </div>
     </DashboardLayout>

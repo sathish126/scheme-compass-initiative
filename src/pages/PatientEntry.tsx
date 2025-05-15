@@ -35,6 +35,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { schemes } from "@/lib/mock-data";
 import { Save, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { savePatient } from "@/utils/localStorageUtils";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -51,6 +53,7 @@ const formSchema = z.object({
 });
 
 const PatientEntry = () => {
+  const navigate = useNavigate();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -103,13 +106,20 @@ const PatientEntry = () => {
   }, [form.watch]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
-    // In a real app, this would send the data to an API
-    console.log("Form data:", data);
-    console.log("Eligible schemes:", eligibleSchemes);
+    // Save patient data to localStorage
+    const patientData = {
+      ...data,
+      recommendedSchemes: eligibleSchemes
+    };
+    
+    savePatient(patientData);
     
     toast.success("Patient details saved successfully", {
       description: `${eligibleSchemes.length} eligible schemes identified`,
     });
+    
+    // Navigate back to dashboard
+    navigate("/facility-dashboard");
   };
 
   return (
@@ -353,7 +363,7 @@ const PatientEntry = () => {
                   <Button type="submit" className="bg-healthcare-600 hover:bg-healthcare-700">
                     <Save className="mr-2 h-4 w-4" /> Register Patient
                   </Button>
-                  <Button type="reset" variant="outline">
+                  <Button type="button" variant="outline" onClick={() => navigate("/facility-dashboard")}>
                     <X className="mr-2 h-4 w-4" /> Cancel
                   </Button>
                 </CardFooter>
