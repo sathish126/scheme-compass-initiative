@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatsCard from "@/components/StatsCard";
@@ -10,12 +10,38 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
 import { Patient } from "@/types";
+import { getDashboardStats } from "@/api";
 import { exportPatientsToCSV } from "@/utils/approvalUtils";
+import Loading from "@/components/ui/loading";
 
 const FacilityDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [facilityPatients] = useState<Patient[]>([]);
+  const [stats, setStats] = useState({
+    totalPatients: 0,
+    registeredToday: 0,
+    pendingApprovals: 0,
+    patientFollowups: 0
+  });
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        if (user) {
+          const data = await getDashboardStats("facility");
+          setStats(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchStats();
+  }, [user]);
   
   const handleExportPatientData = () => {
     if (facilityPatients.length === 0) {
@@ -26,6 +52,14 @@ const FacilityDashboard = () => {
     exportPatientsToCSV(facilityPatients, "Patient-Records");
     toast.success("Patient records exported successfully");
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <Loading size="large" text="Loading dashboard data..." />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -93,25 +127,25 @@ const FacilityDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Total Patients"
-            value="0"
+            value={stats.totalPatients.toString()}
             icon={<Users className="h-4 w-4" />}
             description="No new patients this week"
           />
           <StatsCard
             title="Registered Today"
-            value="0"
+            value={stats.registeredToday.toString()}
             icon={<ClipboardList className="h-4 w-4" />}
             description="New patient registrations"
           />
           <StatsCard
             title="Pending Approvals"
-            value="0"
+            value={stats.pendingApprovals.toString()}
             icon={<ClipboardList className="h-4 w-4" />}
             description="Awaiting hospital review"
           />
           <StatsCard
             title="Patient Follow-ups"
-            value="0"
+            value={stats.patientFollowups.toString()}
             icon={<UserCheck className="h-4 w-4" />}
             description="Due this week"
           />
