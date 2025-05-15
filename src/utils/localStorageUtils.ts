@@ -1,4 +1,3 @@
-
 import { Patient } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
@@ -41,7 +40,7 @@ export const savePatient = (patient: Omit<Patient, "id" | "createdAt">): Patient
         patientId: newPatient.id,
         patientName: newPatient.name,
         schemeName: scheme.name,
-        disease: newPatient.disease || "Not specified",
+        disease: patient.disease || "Not specified",
         facilityName: "Primary Health Center", // Would come from auth context in real app
         date: new Date().toISOString().split('T')[0],
         status: "pending",
@@ -155,4 +154,3 @@ export const getDashboardStats = (role: string) => {
     patientFollowups: Math.floor(patients.length / 3) // Mocked data for followups
   };
 };
-

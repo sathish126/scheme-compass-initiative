@@ -13,6 +13,20 @@ export interface User {
   avatar?: string;
 }
 
+export interface Scheme {
+  id: string;
+  name: string;
+  description: string;
+  eligibilityCriteria: {
+    age?: { min?: number; max?: number };
+    income?: { max: number };
+    category?: Array<'general' | 'obc' | 'sc' | 'st'>;
+    gender?: Array<'male' | 'female' | 'other'>;
+  };
+  benefits: string[];
+  documents: string[];
+}
+
 export interface Patient {
   id: string;
   name: string;
@@ -26,20 +40,8 @@ export interface Patient {
   insuranceStatus: boolean;
   createdAt: Date;
   updatedBy: string;
-}
-
-export interface Scheme {
-  id: string;
-  name: string;
-  description: string;
-  eligibilityCriteria: {
-    age?: { min?: number; max?: number };
-    income?: { max: number };
-    category?: Array<'general' | 'obc' | 'sc' | 'st'>;
-    gender?: Array<'male' | 'female' | 'other'>;
-  };
-  benefits: string[];
-  documents: string[];
+  disease?: string;
+  recommendedSchemes?: Scheme[];
 }
 
 export interface SchemeRecommendation {

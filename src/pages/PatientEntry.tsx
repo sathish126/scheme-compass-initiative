@@ -109,7 +109,8 @@ const PatientEntry = () => {
     // Save patient data to localStorage
     const patientData = {
       ...data,
-      recommendedSchemes: eligibleSchemes
+      recommendedSchemes: eligibleSchemes,
+      updatedBy: "current-user" // Adding the missing updatedBy property
     };
     
     savePatient(patientData);

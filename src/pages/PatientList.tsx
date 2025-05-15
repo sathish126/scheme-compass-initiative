@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,12 +24,17 @@ import { format } from "date-fns";
 import { PlusCircle, Search, MoreHorizontal, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Patient } from "@/types";
+import { getPatients } from "@/utils/localStorageUtils";
 
 const PatientList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  // Empty patients array instead of mock data
   const [patients, setPatients] = useState<Patient[]>([]);
+
+  // Load patients from localStorage when component mounts
+  useEffect(() => {
+    setPatients(getPatients());
+  }, []);
   
   const filteredPatients = patients.filter((patient) =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
