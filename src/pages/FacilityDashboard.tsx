@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
 import { Patient } from "@/types";
-import { getDashboardStats, getApprovalsByLevel } from "@/utils/localStorageUtils";
+import { getDashboardStats, getApprovalsByLevel, getPatients, PatientApproval, approveRecommendation, rejectRecommendation } from "@/utils/localStorageUtils";
 import { exportPatientsToCSV } from "@/utils/approvalUtils";
 import Loading from "@/components/ui/loading";
 
@@ -34,12 +34,16 @@ const FacilityDashboard = () => {
     patientFollowups: 0
   });
   const [loading, setLoading] = useState(true);
-  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [pendingApprovals, setPendingApprovals] = useState<PatientApproval[]>([]);
   
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Get stats from localStorage instead of API
+        // Get patients and approvals data
+        const patients = getPatients();
+        setFacilityPatients(patients);
+        
+        // Get stats from localStorage
         const data = getDashboardStats("facility");
         setStats(data);
         
@@ -58,6 +62,26 @@ const FacilityDashboard = () => {
     
     fetchStats();
   }, [user, navigate]);
+  
+  // Handle approval
+  const handleApprove = (approval: PatientApproval) => {
+    approveRecommendation(approval.id);
+    setPendingApprovals(pendingApprovals.filter(item => item.id !== approval.id));
+    
+    toast.success(`Scheme recommendation for ${approval.patientName} approved`, {
+      description: "The recommendation has been sent to the hospital for review."
+    });
+  };
+
+  // Handle rejection
+  const handleReject = (approval: PatientApproval, reason: string) => {
+    rejectRecommendation(approval.id, reason);
+    setPendingApprovals(pendingApprovals.filter(item => item.id !== approval.id));
+    
+    toast.success(`Scheme recommendation for ${approval.patientName} rejected`, {
+      description: reason
+    });
+  };
   
   const handleExportPatientData = () => {
     if (facilityPatients.length === 0) {
@@ -178,6 +202,8 @@ const FacilityDashboard = () => {
           title="Patient Scheme Recommendations" 
           userRole="facility" 
           externalApprovals={pendingApprovals} 
+          onApprove={handleApprove}
+          onReject={handleReject}
         />
       </div>
     </DashboardLayout>

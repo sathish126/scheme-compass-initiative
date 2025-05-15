@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatsCard from "@/components/StatsCard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,18 +12,114 @@ import {
   Download, BarChart3, ArrowRight, ShieldCheck 
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { getDashboardStats, getApprovalsByLevel, PatientApproval, approveRecommendation, rejectRecommendation } from "@/utils/localStorageUtils";
+import { exportApprovalsToCSV } from "@/utils/approvalUtils";
+import { toast } from "@/components/ui/sonner";
+import Loading from "@/components/ui/loading";
+
+// Generate hospital distribution data from approvals
+const generateHospitalData = () => {
+  const approvals = getApprovalsByLevel("district");
+  const hospitalMap: Record<string, number> = {};
+  
+  approvals.forEach(approval => {
+    if (!hospitalMap[approval.facilityName]) {
+      hospitalMap[approval.facilityName] = 0;
+    }
+    hospitalMap[approval.facilityName]++;
+  });
+  
+  // Convert to data array
+  return Object.entries(hospitalMap).map(([name, value]) => ({
+    name,
+    value
+  }));
+};
 
 const COLORS = ["#0284c7", "#0ea5e9", "#38bdf8", "#7dd3fc"];
 
-const data = [
-  { name: "Hospital A", value: 35 },
-  { name: "Hospital B", value: 25 },
-  { name: "Hospital C", value: 20 },
-  { name: "Hospital D", value: 15 },
-];
-
 const DistrictDashboard = () => {
   const { user } = useAuth();
+  const [stats, setStats] = useState({
+    totalPatients: 0,
+    hospitals: 0,
+    approvedRecommendations: 0,
+    pendingApprovals: 0
+  });
+  const [pendingApprovals, setPendingApprovals] = useState<PatientApproval[]>([]);
+  const [hospitalData, setHospitalData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = () => {
+      try {
+        // Get district-level approvals
+        const approvals = getApprovalsByLevel("district");
+        setPendingApprovals(approvals);
+        
+        // Get hospital distribution data
+        const hospitalStats = generateHospitalData();
+        setHospitalData(hospitalStats.length > 0 ? hospitalStats : [
+          { name: "No Data", value: 1 }
+        ]);
+        
+        // Get dashboard stats
+        const dashboardStats = getDashboardStats("district");
+        setStats({
+          totalPatients: dashboardStats.totalPatients,
+          hospitals: new Set(approvals.map(a => a.facilityName)).size,
+          approvedRecommendations: dashboardStats.patientFollowups,
+          pendingApprovals: dashboardStats.pendingApprovals
+        });
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
+
+  // Handle approval
+  const handleApprove = (approval: PatientApproval) => {
+    approveRecommendation(approval.id);
+    setPendingApprovals(pendingApprovals.filter(item => item.id !== approval.id));
+    
+    toast.success(`Scheme recommendation for ${approval.patientName} approved`, {
+      description: "The recommendation has been sent to the state for review."
+    });
+  };
+
+  // Handle rejection
+  const handleReject = (approval: PatientApproval, reason: string) => {
+    rejectRecommendation(approval.id, reason);
+    setPendingApprovals(pendingApprovals.filter(item => item.id !== approval.id));
+    
+    toast.success(`Scheme recommendation for ${approval.patientName} rejected`, {
+      description: reason
+    });
+  };
+
+  // Export data
+  const handleExportData = () => {
+    if (pendingApprovals.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+    
+    exportApprovalsToCSV(pendingApprovals, "District-Approvals");
+    toast.success("Data exported successfully");
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <Loading size="large" text="Loading dashboard data..." />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -34,7 +130,7 @@ const DistrictDashboard = () => {
             <p className="text-muted-foreground">{user?.district} District - Admin Dashboard</p>
           </div>
           <div>
-            <Button variant="outline" className="mr-2">
+            <Button variant="outline" className="mr-2" onClick={handleExportData}>
               <Download className="mr-2 h-4 w-4" /> Export Report
             </Button>
             <Button className="bg-healthcare-600 hover:bg-healthcare-700">
@@ -85,24 +181,24 @@ const DistrictDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title="Total Patients"
-            value="0"
+            value={stats.totalPatients.toString()}
             icon={<UserCheck className="h-4 w-4" />}
             description="Across all hospitals"
           />
           <StatsCard
             title="Hospitals"
-            value="0"
+            value={stats.hospitals.toString()}
             icon={<Building className="h-4 w-4" />}
             description="In your district"
           />
           <StatsCard
             title="Approved Recommendations"
-            value="0"
+            value={stats.approvedRecommendations.toString()}
             icon={<CheckCircle className="h-4 w-4" />}
           />
           <StatsCard
             title="Pending Approvals"
-            value="0"
+            value={stats.pendingApprovals.toString()}
             icon={<AlertCircle className="h-4 w-4" />}
             description="Requiring your attention"
           />
@@ -118,7 +214,7 @@ const DistrictDashboard = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={data}
+                      data={hospitalData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -127,7 +223,7 @@ const DistrictDashboard = () => {
                       dataKey="value"
                       label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                     >
-                      {data.map((entry, index) => (
+                      {hospitalData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -145,50 +241,22 @@ const DistrictDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center">
-                  <div className="w-full">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">Health For All</p>
-                      <span className="text-sm text-muted-foreground">65%</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="bg-healthcare-500 h-full rounded-full" style={{ width: "65%" }}></div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-full">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">Senior Care Plus</p>
-                      <span className="text-sm text-muted-foreground">48%</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="bg-healthcare-500 h-full rounded-full" style={{ width: "48%" }}></div>
+                {pendingApprovals.reduce((acc: Record<string, number>, curr) => {
+                  acc[curr.schemeName] = (acc[curr.schemeName] || 0) + 1;
+                  return acc;
+                }, {}).map((schemeName: string, count: number, i: number) => (
+                  <div key={i} className="flex items-center">
+                    <div className="w-full">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{schemeName}</p>
+                        <span className="text-sm text-muted-foreground">{(count / pendingApprovals.length * 100).toFixed(0)}%</span>
+                      </div>
+                      <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="bg-healthcare-500 h-full rounded-full" style={{ width: `${count / pendingApprovals.length * 100}%` }}></div>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-full">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">Child Health Initiative</p>
-                      <span className="text-sm text-muted-foreground">42%</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="bg-healthcare-500 h-full rounded-full" style={{ width: "42%" }}></div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-full">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">Maternal Welfare Scheme</p>
-                      <span className="text-sm text-muted-foreground">35%</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="bg-healthcare-500 h-full rounded-full" style={{ width: "35%" }}></div>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -196,7 +264,13 @@ const DistrictDashboard = () => {
 
         <SchemeRecommendationsChart />
         
-        <PendingApprovalsTable title="Pending District Approvals" userRole="district" />
+        <PendingApprovalsTable 
+          title="Pending District Approvals" 
+          userRole="district" 
+          externalApprovals={pendingApprovals}
+          onApprove={handleApprove}
+          onReject={handleReject}
+        />
       </div>
     </DashboardLayout>
   );

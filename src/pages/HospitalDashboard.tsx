@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Building2, Users, CheckCircle, AlertCircle, Download, ArrowRight, ClipboardList, Shield, Table } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getDashboardStats, getApprovalsByLevel } from "@/utils/localStorageUtils";
+import { getDashboardStats, getApprovalsByLevel, PatientApproval, approveRecommendation, rejectRecommendation } from "@/utils/localStorageUtils";
+import { exportApprovalsToCSV } from "@/utils/approvalUtils";
 import Loading from "@/components/ui/loading";
+import { toast } from "@/components/ui/sonner";
 
 const HospitalDashboard = () => {
   const { user } = useAuth();
@@ -21,7 +23,7 @@ const HospitalDashboard = () => {
     pendingApprovals: 0,
     patientFollowups: 0
   });
-  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [pendingApprovals, setPendingApprovals] = useState<PatientApproval[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,12 +41,44 @@ const HospitalDashboard = () => {
         setLoading(false);
       } catch (error) {
         console.error("Error loading dashboard data:", error);
+        toast.error("Failed to load dashboard data");
         setLoading(false);
       }
     };
     
     loadDashboardData();
   }, []);
+
+  // Handle approval
+  const handleApprove = (approval: PatientApproval) => {
+    approveRecommendation(approval.id);
+    setPendingApprovals(pendingApprovals.filter(item => item.id !== approval.id));
+    
+    toast.success(`Scheme recommendation for ${approval.patientName} approved`, {
+      description: "The recommendation has been sent to the district for review."
+    });
+  };
+
+  // Handle rejection
+  const handleReject = (approval: PatientApproval, reason: string) => {
+    rejectRecommendation(approval.id, reason);
+    setPendingApprovals(pendingApprovals.filter(item => item.id !== approval.id));
+    
+    toast.success(`Scheme recommendation for ${approval.patientName} rejected`, {
+      description: reason
+    });
+  };
+
+  // Export data
+  const handleExportData = () => {
+    if (pendingApprovals.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+    
+    exportApprovalsToCSV(pendingApprovals, "Hospital-Approvals");
+    toast.success("Data exported successfully");
+  };
 
   if (loading) {
     return (
@@ -63,7 +97,7 @@ const HospitalDashboard = () => {
             <p className="text-muted-foreground">{user?.hospital} - Hospital Admin Dashboard</p>
           </div>
           <div>
-            <Button variant="outline" className="mr-2">
+            <Button variant="outline" className="mr-2" onClick={handleExportData}>
               <Download className="mr-2 h-4 w-4" /> Export Report
             </Button>
             <Button className="bg-healthcare-600 hover:bg-healthcare-700" onClick={() => navigate("/patients")}>
@@ -143,6 +177,8 @@ const HospitalDashboard = () => {
             title="Pending Hospital Approvals" 
             userRole="hospital"
             externalApprovals={pendingApprovals} 
+            onApprove={handleApprove}
+            onReject={handleReject}
           />
         </div>
       </div>

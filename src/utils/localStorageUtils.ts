@@ -1,3 +1,4 @@
+
 import { Patient } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
@@ -13,7 +14,7 @@ export interface PatientApproval {
   status: "pending" | "approved" | "rejected";
   notes?: string;
   history?: string;
-  currentLevel: "facility" | "hospital" | "district" | "state";
+  currentLevel: "facility" | "hospital" | "district" | "state" | "super";
 }
 
 // Save a new patient to localStorage
@@ -89,19 +90,24 @@ export const getApprovals = (): PatientApproval[] => {
 // Get approvals filtered by role level
 export const getApprovalsByLevel = (level: string): PatientApproval[] => {
   const approvals = getApprovals();
-  return approvals.filter(approval => approval.currentLevel === level);
+  return approvals.filter(approval => approval.currentLevel === level && approval.status === "pending");
 };
 
 // Approve a recommendation and move to next level
-export const approveRecommendation = (id: string): void => {
+export const approveRecommendation = (id: string, comments?: string): void => {
   const approvals = getApprovals();
   const approvalIndex = approvals.findIndex(a => a.id === id);
   
   if (approvalIndex !== -1) {
     const approval = approvals[approvalIndex];
     
+    // Update history if comments provided
+    if (comments) {
+      approval.notes = comments;
+    }
+    
     // Determine next level
-    let nextLevel: "facility" | "hospital" | "district" | "state" | null = null;
+    let nextLevel: "facility" | "hospital" | "district" | "state" | "super" | null = null;
     
     switch (approval.currentLevel) {
       case "facility":
@@ -114,6 +120,9 @@ export const approveRecommendation = (id: string): void => {
         nextLevel = "state";
         break;
       case "state":
+        nextLevel = "super";
+        break;
+      case "super":
         // Final approval
         approval.status = "approved";
         break;
@@ -130,12 +139,18 @@ export const approveRecommendation = (id: string): void => {
 };
 
 // Reject a recommendation
-export const rejectRecommendation = (id: string): void => {
+export const rejectRecommendation = (id: string, reason?: string): void => {
   const approvals = getApprovals();
   const approvalIndex = approvals.findIndex(a => a.id === id);
   
   if (approvalIndex !== -1) {
     approvals[approvalIndex].status = "rejected";
+    
+    // Add rejection reason if provided
+    if (reason) {
+      approvals[approvalIndex].notes = reason;
+    }
+    
     localStorage.setItem('approvals', JSON.stringify(approvals));
   }
 };
