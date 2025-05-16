@@ -1,378 +1,326 @@
 
-import React, { useState, useEffect } from "react";
-import DashboardLayout from "@/components/DashboardLayout";
-import StatsCard from "@/components/StatsCard";
-import { useAuth } from "@/contexts/AuthContext";
-import SchemeRecommendationsChart from "@/components/SchemeRecommendationsChart";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Globe, UserCog, Building2, BarChart2, Download, PlusCircle, Settings, MapPin } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { toast } from "@/components/ui/sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { getPatients, getApprovals, getApprovalsByLevel } from "@/utils/localStorageUtils";
-import { exportPatientsToCSV, exportApprovalsToCSV } from "@/utils/approvalUtils";
-import PendingApprovalsTable from "@/components/PendingApprovalsTable";
-import Loading from "@/components/ui/loading";
-import { Scheme } from "@/types";
-import { v4 as uuidv4 } from "uuid";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import DashboardLayout from '@/components/DashboardLayout';
+import { Check, Download, Plus, Settings, Trash } from 'lucide-react';
+import { PatientApproval, getApprovalsByLevel, approveRecommendation, rejectRecommendation, getPatients } from '@/utils/localStorageUtils';
+import { toast } from '@/hooks/use-toast';
 
-// Transform real data for the chart
-const generateMonthlyData = () => {
-  const approvals = getApprovals();
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const currentMonth = new Date().getMonth();
-  
-  return months.map((month, index) => {
-    // Only include data up to current month
-    if (index > currentMonth) return { month, beneficiaries: 0 };
-    
-    // Base value + random growth + actual approved patients
-    const base = index * 5000;
-    const approved = approvals.filter(a => a.status === "approved").length * 100;
-    return {
-      month,
-      beneficiaries: base + approved
-    };
-  });
-};
+interface SchemeType {
+  id: string;
+  name: string;
+  description: string;
+}
 
 const SuperAdminDashboard = () => {
-  const { user } = useAuth();
-  const [newSchemeName, setNewSchemeName] = useState("");
-  const [schemeDescription, setSchemeDescription] = useState("");
-  const [schemeCategory, setSchemeCategory] = useState("general");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [stats, setStats] = useState({
-    totalPatients: 0,
-    totalDistricts: 0,
-    totalStates: 0,
-    totalHospitals: 0
-  });
-  const [loading, setLoading] = useState(true);
-  const [pendingApprovals, setPendingApprovals] = useState([]);
-  const [chartData, setChartData] = useState([]);
-
-  // Fetch data when component mounts
+  const [pendingApprovals, setPendingApprovals] = useState<PatientApproval[]>([]);
+  const [schemes, setSchemes] = useState<SchemeType[]>([]);
+  const [newSchemeName, setNewSchemeName] = useState('');
+  const [newSchemeDescription, setNewSchemeDescription] = useState('');
+  const [isAddingScheme, setIsAddingScheme] = useState(false);
+  
+  // Load data on component mount
   useEffect(() => {
     const loadData = () => {
-      try {
-        const patients = getPatients();
-        const approvals = getApprovalsByLevel("super");
-        
-        // Get unique district/state/hospital counts from patient data
-        const districts = new Set();
-        const states = new Set();
-        const hospitals = new Set();
-        
-        patients.forEach(patient => {
-          if (patient.district) districts.add(patient.district);
-          if (patient.state) states.add(patient.state);
-          if (patient.hospital) hospitals.add(patient.hospital);
-        });
-        
-        // Set stats
-        setStats({
-          totalPatients: patients.length,
-          totalDistricts: districts.size || 0,
-          totalStates: states.size || 0,
-          totalHospitals: hospitals.size || 0
-        });
-        
-        // Set approvals
-        setPendingApprovals(approvals);
-        
-        // Set chart data
-        setChartData(generateMonthlyData());
-      } catch (error) {
-        console.error("Error loading dashboard data:", error);
-        toast.error("Failed to load dashboard data");
-      } finally {
-        setLoading(false);
+      // Get pending approvals for super admin
+      const approvals = getApprovalsByLevel('super');
+      setPendingApprovals(approvals);
+      
+      // Load schemes from localStorage
+      const savedSchemes = localStorage.getItem('schemes');
+      if (savedSchemes) {
+        setSchemes(JSON.parse(savedSchemes));
+      } else {
+        // Initialize with some default schemes if none exist
+        const defaultSchemes = [
+          { id: '1', name: 'Ayushman Bharat', description: 'National health insurance scheme' },
+          { id: '2', name: 'Janani Suraksha Yojana', description: 'Safe motherhood intervention' },
+        ];
+        localStorage.setItem('schemes', JSON.stringify(defaultSchemes));
+        setSchemes(defaultSchemes);
       }
     };
     
     loadData();
   }, []);
-
-  const handleAddNewScheme = () => {
-    if (!newSchemeName.trim()) {
-      toast.error("Please enter a scheme name");
-      return;
-    }
-
+  
+  const handleApprove = (approval: PatientApproval) => {
     try {
-      // Get existing schemes from localStorage or create an empty array
-      const existingSchemes = JSON.parse(localStorage.getItem('schemes') || '[]');
-      
-      // Create new scheme
-      const newScheme: Scheme = {
-        id: uuidv4(),
-        name: newSchemeName,
-        description: schemeDescription,
-        eligibilityCriteria: {
-          category: schemeCategory === "general" ? ["general", "obc", "sc", "st"] : [schemeCategory as any]
-        },
-        benefits: ["Healthcare coverage", "Medical subsidies"],
-        documents: ["Identity proof", "Income certificate"]
-      };
-      
-      // Add to schemes and save
-      existingSchemes.push(newScheme);
-      localStorage.setItem('schemes', JSON.stringify(existingSchemes));
-      
-      toast.success(`New scheme "${newSchemeName}" added successfully`, {
-        description: "The scheme has been added to the database and is now available for recommendations."
+      approveRecommendation(approval.id);
+      setPendingApprovals(prev => prev.filter(a => a.id !== approval.id));
+      toast({
+        title: "Final Approval Granted",
+        description: `${approval.schemeName} for ${approval.patientName} has been approved.`,
+        variant: "default",
       });
-
-      // Reset form
-      setNewSchemeName("");
-      setSchemeDescription("");
-      setSchemeCategory("general");
-      setIsDialogOpen(false);
     } catch (error) {
-      toast.error("Failed to add new scheme");
-      console.error("Error adding scheme:", error);
+      console.error("Error approving recommendation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to approve. Please try again.",
+        variant: "destructive",
+      });
     }
   };
-
-  const handleExportAnnualReport = () => {
-    const patients = getPatients();
-    
-    if (patients.length === 0) {
-      toast.error("No patient data to export");
+  
+  const handleReject = (approval: PatientApproval) => {
+    try {
+      rejectRecommendation(approval.id);
+      setPendingApprovals(prev => prev.filter(a => a.id !== approval.id));
+      toast({
+        title: "Recommendation Rejected",
+        description: `${approval.schemeName} for ${approval.patientName} has been rejected.`,
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error("Error rejecting recommendation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reject. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleAddScheme = () => {
+    if (!newSchemeName.trim()) {
+      toast({
+        title: "Error",
+        description: "Scheme name is required",
+        variant: "destructive",
+      });
       return;
     }
     
-    exportPatientsToCSV(patients, "Annual-Patient-Report");
+    const newScheme = {
+      id: Date.now().toString(),
+      name: newSchemeName,
+      description: newSchemeDescription,
+    };
     
-    toast.success("Annual report export initiated", {
-      description: "Your report is being generated and will download shortly."
+    const updatedSchemes = [...schemes, newScheme];
+    setSchemes(updatedSchemes);
+    localStorage.setItem('schemes', JSON.stringify(updatedSchemes));
+    
+    // Reset form
+    setNewSchemeName('');
+    setNewSchemeDescription('');
+    setIsAddingScheme(false);
+    
+    toast({
+      title: "Success",
+      description: "New health scheme added successfully",
+      variant: "default",
     });
   };
-
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <Loading size="large" text="Loading dashboard data..." />
-      </DashboardLayout>
-    );
-  }
-
+  
+  const deleteScheme = (id: string) => {
+    const updatedSchemes = schemes.filter(scheme => scheme.id !== id);
+    setSchemes(updatedSchemes);
+    localStorage.setItem('schemes', JSON.stringify(updatedSchemes));
+    
+    toast({
+      title: "Scheme Deleted",
+      description: "Health scheme has been removed",
+      variant: "default",
+    });
+  };
+  
+  const exportData = () => {
+    const patients = getPatients();
+    const approvals = JSON.parse(localStorage.getItem('approvals') || '[]');
+    
+    // Create JSON data
+    const exportData = {
+      patients,
+      approvals,
+      schemes,
+      exportDate: new Date().toISOString(),
+    };
+    
+    // Convert to string
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    
+    // Create download link
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `hdims_export_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    toast({
+      title: "Export Complete",
+      description: "System data has been exported successfully",
+      variant: "default",
+    });
+  };
+  
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-6 p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Welcome back, {user?.name}</h1>
-            <p className="text-muted-foreground">Super Admin Dashboard</p>
+            <h1 className="text-2xl font-bold">Super Admin Dashboard</h1>
+            <p className="text-muted-foreground">Health Department Information Management System</p>
           </div>
-          <div>
-            <Button variant="outline" className="mr-2" onClick={handleExportAnnualReport}>
-              <Download className="mr-2 h-4 w-4" /> Export Annual Report
-            </Button>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-healthcare-600 hover:bg-healthcare-700">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add New Scheme
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Add New Healthcare Scheme</DialogTitle>
-                  <DialogDescription>
-                    Create a new healthcare scheme to be available for patient recommendations.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="scheme-name" className="text-right">Scheme Name</Label>
-                    <Input 
-                      id="scheme-name" 
-                      value={newSchemeName} 
-                      onChange={(e) => setNewSchemeName(e.target.value)} 
-                      className="col-span-3" 
-                      placeholder="Enter scheme name" 
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="scheme-category" className="text-right">Category</Label>
-                    <Select 
-                      value={schemeCategory} 
-                      onValueChange={setSchemeCategory}
-                    >
-                      <SelectTrigger className="col-span-3" id="scheme-category">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="general">General</SelectItem>
-                        <SelectItem value="chronic">Chronic Disease</SelectItem>
-                        <SelectItem value="maternal">Maternal Care</SelectItem>
-                        <SelectItem value="pediatric">Pediatric Care</SelectItem>
-                        <SelectItem value="elderly">Elderly Care</SelectItem>
-                        <SelectItem value="emergency">Emergency Care</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="scheme-description" className="text-right pt-2">Description</Label>
-                    <Textarea 
-                      id="scheme-description" 
-                      value={schemeDescription} 
-                      onChange={(e) => setSchemeDescription(e.target.value)} 
-                      className="col-span-3" 
-                      placeholder="Describe the scheme benefits and eligibility criteria" 
-                      rows={4}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddNewScheme} className="bg-healthcare-600 hover:bg-healthcare-700">Add Scheme</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatsCard
-            title="Total States"
-            value={stats.totalStates.toString()}
-            icon={<Globe className="h-4 w-4" />}
-            description="Connected to platform"
-          />
-          <StatsCard
-            title="Total Districts"
-            value={stats.totalDistricts.toString()}
-            icon={<MapPin className="h-4 w-4" />}
-          />
-          <StatsCard
-            title="Total Patients"
-            value={stats.totalPatients.toString()}
-            icon={<UserCog className="h-4 w-4" />}
-            description="Nationwide coverage"
-          />
-          <StatsCard
-            title="Total Hospitals"
-            value={stats.totalHospitals.toString()}
-            icon={<Building2 className="h-4 w-4" />}
-          />
-        </div>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>National Scheme Beneficiary Growth</CardTitle>
+          
+          <div className="flex gap-2">
             <Button 
               variant="outline" 
-              size="sm" 
-              onClick={() => exportPatientsToCSV(getPatients(), "Scheme-Beneficiaries")}
+              className="flex items-center gap-2"
+              onClick={exportData}
             >
-              <Download className="mr-2 h-4 w-4" /> Export Data
+              <Download size={16} />
+              Export All Data
             </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[350px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={chartData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area 
-                    type="monotone" 
-                    dataKey="beneficiaries" 
-                    stroke="#0284c7" 
-                    fill="#0ea5e9" 
-                    fillOpacity={0.3}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="col-span-1 lg:col-span-2">
-            <CardHeader>
-              <CardTitle>State Performance Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {["State A", "State B", "State C", "State D", "State E"].map((state, i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="h-4 w-4 rounded-full bg-healthcare-500 mr-2"></div>
-                        <p className="font-medium">{state}</p>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <p className="text-sm">
-                          <span className="font-medium">{7000 - i * 800}</span> patients
-                        </p>
-                        <p className="text-sm">
-                          <span className="font-medium">{92 - i * 3}%</span> coverage
-                        </p>
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="bg-healthcare-500 h-full rounded-full transition-all" 
-                        style={{ width: `${92 - i * 3}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
+            
+            <Button
+              className="flex items-center gap-2"
+              onClick={() => setIsAddingScheme(!isAddingScheme)}
+            >
+              <Plus size={16} />
+              {isAddingScheme ? 'Cancel' : 'Add Scheme'}
+            </Button>
+          </div>
+        </div>
+        
+        {isAddingScheme && (
           <Card>
             <CardHeader>
-              <CardTitle>Active Schemes</CardTitle>
+              <CardTitle>Add New Health Scheme</CardTitle>
+              <CardDescription>Create a new health scheme for patient recommendations</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {JSON.parse(localStorage.getItem('schemes') || '[]').slice(0, 5).map((scheme, i) => (
-                  <div key={i} className="flex items-center justify-between border-b pb-2 last:border-0">
-                    <div className="flex items-center">
-                      <div className={`h-3 w-3 rounded-full mr-2 ${
-                        i === 0 ? "bg-green-500" : 
-                        i === 1 ? "bg-blue-500" : 
-                        i === 2 ? "bg-purple-500" : 
-                        i === 3 ? "bg-orange-500" : "bg-red-500"
-                      }`}></div>
-                      <p className="text-sm font-medium">{scheme.name}</p>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      <BarChart2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button size="sm" variant="outline" className="w-full" onClick={() => setIsDialogOpen(true)}>
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add New Scheme
-                </Button>
+                <div>
+                  <label htmlFor="scheme-name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Scheme Name
+                  </label>
+                  <input
+                    type="text"
+                    id="scheme-name"
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter scheme name"
+                    value={newSchemeName}
+                    onChange={(e) => setNewSchemeName(e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="scheme-desc" className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    id="scheme-desc"
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter scheme description"
+                    value={newSchemeDescription}
+                    onChange={(e) => setNewSchemeDescription(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button className="flex items-center gap-2" onClick={handleAddScheme}>
+                    <Plus size={16} />
+                    Create Scheme
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
+        )}
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Final Approvals</CardTitle>
+              <CardDescription>Scheme recommendations needing final approval</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingApprovals.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  <p>No pending approvals</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pendingApprovals.map((approval) => (
+                    <div key={approval.id} className="border rounded p-3">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-medium">{approval.patientName}</h3>
+                        <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                          Final Approval
+                        </span>
+                      </div>
+                      
+                      <p className="text-sm text-muted-foreground mt-1">{approval.schemeName}</p>
+                      <p className="text-sm mt-1">{approval.disease}</p>
+                      
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t">
+                        <span className="text-xs text-muted-foreground">
+                          From: {approval.facilityName}
+                        </span>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            className="h-8 text-sm border-red-600 text-red-600 hover:bg-red-50"
+                            onClick={() => handleReject(approval)}
+                          >
+                            Reject
+                          </Button>
+                          <Button 
+                            className="h-8 text-sm flex items-center gap-1"
+                            onClick={() => handleApprove(approval)}
+                          >
+                            <Check size={14} />
+                            Final Approve
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Health Schemes</CardTitle>
+              <CardDescription>Manage available health schemes for recommendation</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {schemes.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  <p>No health schemes added yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {schemes.map((scheme) => (
+                    <div key={scheme.id} className="flex items-start justify-between p-3 border rounded">
+                      <div>
+                        <h3 className="font-medium">{scheme.name}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{scheme.description}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteScheme(scheme.id)}
+                        className="text-red-500 hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash size={16} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-
-        <PendingApprovalsTable 
-          title="Final State Approved Cases" 
-          userRole="super" 
-          externalApprovals={pendingApprovals}
-        />
       </div>
     </DashboardLayout>
   );
