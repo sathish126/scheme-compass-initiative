@@ -138,25 +138,37 @@ const DistrictDashboard = () => {
           <StatsCard 
             title="Patients" 
             value={Math.floor(Math.random() * 1000) + 5000} 
-            description="+12% this month" 
+            description={{
+              value: 12,
+              isPositive: true
+            }}
             trend="up"
           />
           <StatsCard 
             title="Facilities" 
             value={Math.floor(Math.random() * 20) + 50} 
-            description="3 new this month" 
+            description={{
+              value: 3,
+              isPositive: true
+            }}
             trend="up"
           />
           <StatsCard 
             title="Pending" 
             value={pendingApprovals.length} 
-            description="Approval requests" 
+            description={{
+              value: pendingApprovals.length > 5 ? 5 : pendingApprovals.length,
+              isPositive: pendingApprovals.length <= 5
+            }}
             trend={pendingApprovals.length > 5 ? "down" : "up"}
           />
           <StatsCard 
             title="Coverage" 
-            value={Math.floor(Math.random() * 10) + 85 + "%"} 
-            description="Population reached" 
+            value={Math.floor(Math.random() * 10) + 85} 
+            description={{
+              value: 2,
+              isPositive: true
+            }}
             trend="up"
           />
         </div>

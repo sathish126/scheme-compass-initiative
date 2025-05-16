@@ -1,95 +1,16 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/sonner";
-import { markdownToHtml } from "@/hooks/use-markdown";
 import Loading from "@/components/ui/loading";
 
 const GetStartedPage = () => {
-  const [guide, setGuide] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Simulating fetch of markdown content from backend
-    // In a real app, this would fetch from the API
-    setIsLoading(true);
-    
-    // Simulate API delay
-    setTimeout(() => {
-      const mockMarkdown = `# Healthcare Scheme Compass Integration Guide
-
-This guide explains how to connect the Healthcare Scheme Compass frontend to the Python Flask backend.
-
-## Backend Setup
-
-1. **Install Dependencies**
-\`\`\`bash
-cd healthcare_backend
-pip install -r requirements.txt
-\`\`\`
-
-2. **Configure Environment**
-Create a \`.env\` file in the root directory with the following variables:
-\`\`\`
-FLASK_APP=app.py
-FLASK_ENV=development
-SECRET_KEY=your_secret_key
-DATABASE_URI=sqlite:///healthcare.db  # or your preferred database
-\`\`\`
-
-3. **Initialize Database**
-\`\`\`bash
-flask db init
-flask db migrate -m "Initial migration"
-flask db upgrade
-\`\`\`
-
-4. **Start Backend Server**
-\`\`\`bash
-flask run --port=5000
-\`\`\`
-
-## Frontend Configuration
-
-1. **Update API Base URL**
-   
-   The frontend is already configured to connect to \`http://localhost:5000/api\` by default. If your backend runs on a different URL, update it in the \`src/api/index.ts\` file.
-
-## Backend Implementation Notes
-
-### Models
-
-- **User Model**: Maps to different roles (facility, hospital, district, state, super)
-- **Patient Model**: Stores patient demographics and medical info
-- **Scheme Model**: Represents healthcare schemes
-- **Recommendation Model**: Tracks approvals through the workflow
-
-### Authentication Flow
-
-1. Frontend calls \`/api/auth/login\` with credentials
-2. Backend validates and returns user info with JWT token
-3. Frontend stores token in localStorage
-4. Subsequent API calls include token in Authorization header
-
-### Approval Workflow
-
-The backend implements a multi-level approval workflow:
-
-1. Facility creates recommendation
-2. Hospital admin approves/rejects
-3. District admin approves/rejects
-4. State admin gives final approval`;
-
-      setGuide(mockMarkdown);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
 
   return (
     <DashboardLayout>
@@ -104,35 +25,15 @@ The backend implements a multi-level approval workflow:
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
-            <h1 className="text-2xl font-bold tracking-tight">Get Started Guide</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Healthcare Scheme Guide</h1>
           </div>
         </div>
 
-        <Tabs defaultValue="guide" className="w-full">
+        <Tabs defaultValue="api" className="w-full">
           <TabsList>
-            <TabsTrigger value="guide">Integration Guide</TabsTrigger>
             <TabsTrigger value="api">API Reference</TabsTrigger>
             <TabsTrigger value="models">Data Models</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="guide">
-            <Card>
-              <CardHeader>
-                <CardTitle>Frontend-Backend Integration Guide</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  {isLoading ? (
-                    <Loading size="large" text="Loading guide content..." />
-                  ) : (
-                    <div className="markdown-content" 
-                      dangerouslySetInnerHTML={{ __html: markdownToHtml(guide) }} 
-                    />
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
           
           <TabsContent value="api">
             <Card>

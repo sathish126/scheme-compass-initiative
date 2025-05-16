@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Patient, Scheme } from "@/types";
 import { savePatient } from "@/utils/localStorageUtils";
@@ -21,7 +22,7 @@ const FormSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
-  age: z.number().min(0, {
+  age: z.coerce.number().min(0, {
     message: "Age must be a positive number.",
   }),
   gender: z.enum(["male", "female", "other"], {
@@ -34,7 +35,7 @@ const FormSchema = z.object({
     message: "Invalid phone number format.",
   }),
   medicalHistory: z.string().optional(),
-  income: z.number().min(0, {
+  income: z.coerce.number().min(0, {
     message: "Income must be a positive number.",
   }),
   category: z.enum(["general", "obc", "sc", "st"], {
@@ -47,7 +48,6 @@ const FormSchema = z.object({
 });
 
 const PatientEntry = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -104,7 +104,7 @@ const PatientEntry = () => {
     });
   }
 
-  const handlePatientSubmit = async (data: any) => {
+  const handlePatientSubmit = async (data: z.infer<typeof FormSchema>) => {
     // Convert age and income to numbers
     data.age = Number(data.age);
     data.income = Number(data.income);
@@ -119,7 +119,7 @@ const PatientEntry = () => {
       gender: data.gender,
       address: data.address,
       contact: data.contact,
-      medicalHistory: data.medicalHistory,
+      medicalHistory: data.medicalHistory || "",
       income: data.income,
       category: data.category,
       insuranceStatus: data.insuranceStatus,
@@ -173,6 +173,7 @@ const PatientEntry = () => {
                             type="number"
                             placeholder="Age"
                             {...field}
+                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -260,6 +261,7 @@ const PatientEntry = () => {
                             type="number"
                             placeholder="Annual Income"
                             {...field}
+                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
                           />
                         </FormControl>
                         <FormMessage />
