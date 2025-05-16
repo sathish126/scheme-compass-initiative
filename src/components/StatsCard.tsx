@@ -7,12 +7,12 @@ interface StatsCardProps {
   title: string;
   value: number | string;
   icon?: React.ReactNode;
-  description?: string;
-  className?: string;
-  trend?: {
+  description?: {
     value: number;
     isPositive: boolean;
   };
+  className?: string;
+  trend?: "up" | "down";
 }
 
 const StatsCard: React.FC<StatsCardProps> = ({
@@ -37,13 +37,12 @@ const StatsCard: React.FC<StatsCardProps> = ({
               <span
                 className={cn(
                   "mr-1",
-                  trend.isPositive ? "text-green-500" : "text-red-500"
+                  trend === "up" ? "text-green-500" : "text-red-500"
                 )}
               >
-                {trend.isPositive ? "↑" : "↓"} {trend.value}%
+                {trend === "up" ? "↑" : "↓"} {description?.value}%
               </span>
             )}
-            {description}
           </p>
         )}
       </CardContent>

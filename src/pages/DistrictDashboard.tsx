@@ -10,7 +10,7 @@ import { toast } from '@/hooks/use-toast';
 const exportToCSV = (data: any[], fileName: string) => {
   // Convert data to CSV format
   const headers = Object.keys(data[0]).join(',');
-  const rows = data.map(item => Object.values(item).join(',')).join('\n');
+  const rows = data.map(item => Object.values(item).join('\n')).join('\n');
   const csvContent = `${headers}\n${rows}`;
   
   // Create blob and download
