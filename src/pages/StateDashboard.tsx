@@ -66,25 +66,37 @@ const StateDashboard = () => {
             title="Total Districts"
             value="0"
             icon={<Map className="h-4 w-4" />}
-            description="In your state"
+            description={{
+              value: 0,
+              isPositive: true
+            }}
           />
           <StatsCard
             title="Total Hospitals"
             value="0"
             icon={<BuildingIcon className="h-4 w-4" />}
-            description="Across all districts"
+            description={{
+              value: 0,
+              isPositive: true
+            }}
           />
           <StatsCard
             title="Total Patients"
             value={stats.totalPatients}
             icon={<UserCheck className="h-4 w-4" />}
-            description="Registered in the system"
+            description={{
+              value: 0,
+              isPositive: true
+            }}
           />
           <StatsCard
             title="Pending Approvals"
             value={stats.pendingApprovals}
             icon={<BarChart3 className="h-4 w-4" />}
-            description="Requiring your attention"
+            description={{
+              value: 0,
+              isPositive: false
+            }}
           />
         </div>
 

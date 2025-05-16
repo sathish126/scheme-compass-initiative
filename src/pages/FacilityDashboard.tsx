@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -176,25 +175,41 @@ const FacilityDashboard = () => {
             title="Total Patients"
             value={stats.totalPatients.toString()}
             icon={<Users className="h-4 w-4" />}
-            description="No new patients this week"
+            description={{
+              value: 0,
+              isPositive: true
+            }}
+            trend="up"
           />
           <StatsCard
             title="Registered Today"
             value={stats.registeredToday.toString()}
             icon={<ClipboardList className="h-4 w-4" />}
-            description="New patient registrations"
+            description={{
+              value: stats.registeredToday,
+              isPositive: true
+            }}
+            trend="up"
           />
           <StatsCard
             title="Pending Approvals"
             value={stats.pendingApprovals.toString()}
             icon={<ClipboardList className="h-4 w-4" />}
-            description="Awaiting hospital review"
+            description={{
+              value: stats.pendingApprovals,
+              isPositive: false
+            }}
+            trend="down"
           />
           <StatsCard
             title="Patient Follow-ups"
             value={stats.patientFollowups.toString()}
             icon={<UserCheck className="h-4 w-4" />}
-            description="Due this week"
+            description={{
+              value: stats.patientFollowups,
+              isPositive: true
+            }}
+            trend="up"
           />
         </div>
 

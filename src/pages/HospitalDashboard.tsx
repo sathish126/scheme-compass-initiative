@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatsCard from "@/components/StatsCard";
@@ -150,7 +149,10 @@ const HospitalDashboard = () => {
             title="Total Patients"
             value={stats.totalPatients.toString()}
             icon={<Users className="h-4 w-4" />}
-            description="From all facilities"
+            description={{
+              value: 0,
+              isPositive: true
+            }}
           />
           <StatsCard
             title="Total Recommendations"
@@ -161,12 +163,19 @@ const HospitalDashboard = () => {
             title="Approved Recommendations"
             value={stats.patientFollowups.toString()}
             icon={<CheckCircle className="h-4 w-4" />}
+            description={{
+              value: stats.patientFollowups,
+              isPositive: true
+            }}
           />
           <StatsCard
             title="Pending Approvals"
             value={stats.pendingApprovals.toString()}
             icon={<AlertCircle className="h-4 w-4" />}
-            description="Requiring your attention"
+            description={{
+              value: stats.pendingApprovals,
+              isPositive: false
+            }}
           />
         </div>
 
