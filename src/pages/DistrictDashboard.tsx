@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DownloadIcon, Plus, CheckCircle, XCircle } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { StatsCard } from '@/components/StatsCard';
+import StatsCard from '@/components/StatsCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { PatientApproval, getApprovalsByLevel, approveRecommendation, rejectRecommendation, getPatients } from '@/utils/localStorageUtils';
 import { toast } from '@/hooks/use-toast';
